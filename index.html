@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chronicle | Personal Media Archive</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         /* --- THEME & VARIABLES --- */
         :root {
@@ -20,7 +23,8 @@
             --danger: #ef4444;
             --success: #10b981;
             --warning: #f59e0b;
-            --font-family: system-ui, -apple-system, sans-serif;
+            --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-display: 'Fraunces', Georgia, serif;
             --radius: 8px;
             --transition: 0.3s ease;
         }
@@ -69,6 +73,8 @@
         /* --- BASE STYLES --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: var(--font-family); background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; height: 100vh; transition: background-color var(--transition), color var(--transition); }
+        h1, h2, h3, h4, .brand, .brand-lg { font-family: var(--font-display); letter-spacing: -0.01em; }
+        #headerTitle { font-weight: 600; }
         a { text-decoration: none; color: inherit; }
         button, input, select, textarea { font-family: inherit; outline: none; border: none; }
         button { cursor: pointer; transition: all var(--transition); background: none; color: inherit; }
@@ -165,13 +171,49 @@
         .mobile-nav-btn { display: none; }
 
         /* --- LOGIN SCREEN --- */
-        #loginScreen { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem; text-align: center; padding: 1.5rem; }
-        #loginScreen .brand-lg { font-size: 2.25rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 0.75rem; }
+        #loginScreen { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem; text-align: center; padding: 1.5rem; overflow: hidden; }
+        #loginScreen::before, #loginScreen::after {
+            content: ''; position: absolute; width: 45vmax; height: 45vmax; border-radius: 50%; filter: blur(80px); opacity: 0.18; z-index: -1;
+            background: radial-gradient(circle, var(--primary), transparent 70%);
+        }
+        #loginScreen::before { top: -15vmax; inset-inline-start: -10vmax; animation: driftA 18s ease-in-out infinite; }
+        #loginScreen::after { bottom: -15vmax; inset-inline-end: -10vmax; animation: driftB 22s ease-in-out infinite; }
+        @keyframes driftA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(6vmax, 4vmax) scale(1.15); } }
+        @keyframes driftB { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-5vmax, -5vmax) scale(1.1); } }
+        #loginScreen > * { animation: loginRise 0.6s ease backwards; }
+        #loginScreen .brand-lg { animation-delay: 0s; }
+        #loginScreen p:first-of-type { animation-delay: 0.08s; }
+        #loginScreen #accountPicker { animation-delay: 0.14s; }
+        #loginScreen .google-btn { animation-delay: 0.2s; }
+        #loginScreen .site-credit { animation-delay: 0.3s; }
+        @keyframes loginRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        #loginScreen .brand-lg { font-size: 2.25rem; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 0.75rem; }
         #loginScreen p { color: var(--text-muted); max-width: 340px; }
-        .google-btn { display: flex; align-items: center; gap: 0.75rem; background: #fff; color: #1f1f1f; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
-        .google-btn:hover { background: #f5f5f5; }
+        .google-btn { display: flex; align-items: center; gap: 0.75rem; background: #fff; color: #1f1f1f; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .google-btn:hover { background: #f5f5f5; transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.3); }
         #loginStatus { color: var(--text-muted); font-size: 0.9rem; min-height: 1.2rem; }
         #appContainer { display: flex; width: 100%; height: 100%; }
+        .site-credit { font-size: 0.72rem; color: var(--text-muted); opacity: 0.7; display: flex; align-items: center; gap: 0.3rem; }
+        .site-credit .heart { color: var(--danger); animation: heartbeat 1.8s ease-in-out infinite; display: inline-block; }
+        @keyframes heartbeat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+        /* --- SIGNATURE MOTION: view transitions, active nav, cards, toast --- */
+        @keyframes viewFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #viewContainer.view-fade { animation: viewFadeIn 0.4s cubic-bezier(.2,.8,.2,1); }
+        .nav-item.active { animation: navActivate 0.3s ease; }
+        @keyframes navActivate { from { padding-inline-start: 1rem; } to { padding-inline-start: 1.5rem; } }
+        .media-card { transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition); }
+        .media-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
+        .media-card .media-cover { transition: transform 0.5s ease; }
+        .media-card:hover .media-cover { transform: scale(1.06); }
+        .toast.show { animation: toastPop 0.45s cubic-bezier(.34,1.56,.64,1); }
+        @keyframes toastPop { 0% { transform: translateY(100px) scale(0.9); opacity: 0; } 60% { transform: translateY(-4px) scale(1.02); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        .stat-number { display: inline-block; }
+        @media (prefers-reduced-motion: reduce) {
+            #loginScreen::before, #loginScreen::after, .site-credit .heart { animation: none !important; }
+            #loginScreen > *, #viewContainer.view-fade, .nav-item.active, .toast.show { animation: none !important; }
+            .media-card:hover .media-cover { transform: none; }
+        }
 
         /* Media Queries */
         @media (max-width: 768px) {
@@ -200,6 +242,7 @@
         </button>
         <div id="loginStatus"></div>
         <p style="font-size:0.75rem; opacity:0.6; max-width:340px;">Your data is stored privately in your own Google account.<br>بياناتك تُحفظ بشكل خاص في حساب Google الخاص بك فقط.</p>
+        <div class="site-credit">Chronicle <span class="heart">♥</span> by Zayd Chkouri</div>
     </div>
 
     <style>
@@ -253,7 +296,7 @@
             </div>
         </header>
 
-        <div class="content-area" id="viewContainer">
+        <div class="content-area view-fade" id="viewContainer">
             <!-- Views injected here -->
         </div>
     </main>
@@ -806,6 +849,13 @@
                 case 'statistics': renderStatistics(container); break;
                 case 'settings': renderSettings(container); break;
             }
+
+            // Retrigger the fade/rise entrance on every navigation (same element, forced reflow)
+            container.classList.remove('view-fade');
+            void container.offsetWidth;
+            container.classList.add('view-fade');
+
+            if (view === 'dashboard') animateDashboardCounters();
         }
 
         // --- RENDER FUNCTIONS ---
@@ -853,9 +903,9 @@
 
             container.innerHTML = `
                 <div class="stats-grid">
-                    <div class="card stat-card"><div class="stat-value">${state.data.length}</div><div data-i18n="totalItems">${t('totalItems')}</div></div>
-                    <div class="card stat-card"><div class="stat-value">${completed}</div><div data-i18n="completed">${t('completed')}</div></div>
-                    <div class="card stat-card"><div class="stat-value">${watching}</div><div data-i18n="watchingNow">${t('watchingNow')}</div></div>
+                    <div class="card stat-card"><div class="stat-value stat-number" id="statTotalItems" data-target="${state.data.length}">0</div><div data-i18n="totalItems">${t('totalItems')}</div></div>
+                    <div class="card stat-card"><div class="stat-value stat-number" id="statCompleted" data-target="${completed}">0</div><div data-i18n="completed">${t('completed')}</div></div>
+                    <div class="card stat-card"><div class="stat-value stat-number" id="statWatching" data-target="${watching}">0</div><div data-i18n="watchingNow">${t('watchingNow')}</div></div>
                     <div class="card stat-card"><div class="stat-value" style="font-size:1.5rem; line-height:2.5rem">${timeStr}</div><div data-i18n="totalTime">${t('totalTime')}</div></div>
                 </div>
                 <h3 class="p-4" style="font-size:1.25rem; font-weight:bold">${t('recentlyAdded')}</h3>
@@ -863,6 +913,23 @@
                     ${state.data.slice().reverse().slice(0, 12).map(generateMediaCard).join('')}
                 </div>
             `;
+        }
+
+        function animateDashboardCounters() {
+            const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            document.querySelectorAll('.stat-number[data-target]').forEach(el => {
+                const target = parseInt(el.getAttribute('data-target'), 10) || 0;
+                if (reduceMotion || target === 0) { el.innerText = target; return; }
+                const duration = 700;
+                const start = performance.now();
+                function tick(now) {
+                    const progress = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+                    el.innerText = Math.round(eased * target);
+                    if (progress < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+            });
         }
 
         function calculateTotalTime() {
@@ -1123,6 +1190,9 @@
                         <button class="btn btn-surface" style="border-color:var(--danger); color:var(--danger)" onclick="signOut()">
                             ${state.settings.lang === 'ar' ? 'تسجيل الخروج وحذف هذا الحساب من الجهاز' : 'Sign out and remove this account from device'}
                         </button>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+                        <div class="site-credit" style="justify-content:center;">Chronicle <span class="heart">♥</span> by Zayd Chkouri</div>
                     </div>
                 </div>
             `;
