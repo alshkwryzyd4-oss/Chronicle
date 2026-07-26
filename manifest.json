@@ -1,0 +1,21 @@
+{
+  "background_color": "#1e1e1e",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Chronicle",
+  "orientation": "any",
+  "scope": "/https://alshkwryzyd4-oss.github.io/Chronicle/",
+  "short_name": "Chronicle",
+  "start_url": "https://alshkwryzyd4-oss.github.io/Chronicle/",
+  "theme_color": "#bc8f5a",
+  "id": "/index.html",
+  "lang": "en",
+  "categories": [
+    "design",
+    "developer",
+    "graphics &amp; design",
+    "navigation",
+    "personalization",
+    "reference"
+  ]
+}
