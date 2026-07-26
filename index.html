@@ -381,7 +381,10 @@
                 language: "Language", theme: "Theme", exportData: "Export Backup", importData: "Import Backup",
                 achievementUnlocked: "Achievement Unlocked!", nothingHere: "No items found. Start adding some!",
                 rankDesc: "Drag and drop your completed items to rank your Top 10.", recentlyAdded: "Recently Added",
-                games: "Games", movies: "Movies"
+                games: "Games", movies: "Movies",
+                schedule: "Airing Schedule", airingDay: "Airing Day", airingTime: "Airing Time", notAiring: "Not scheduled",
+                daySat: "Saturday", daySun: "Sunday", dayMon: "Monday", dayTue: "Tuesday", dayWed: "Wednesday", dayThu: "Thursday", dayFri: "Friday",
+                scheduleEmpty: "No airing days set for what you're watching yet. Edit an item to add one.", scheduleDesc: "Shows you're currently watching, grouped by the day new episodes air."
             },
             ar: {
                 appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
@@ -396,7 +399,10 @@
                 language: "اللغة", theme: "المظهر", exportData: "تصدير نسخة احتياطية", importData: "استيراد نسخة احتياطية",
                 achievementUnlocked: "إنجاز جديد!", nothingHere: "لا توجد عناصر بعد، ابدأ بإضافة أول عنصر!",
                 rankDesc: "اسحب العناصر المكتملة وأفلتها لترتيب أفضل 10 لديك.", recentlyAdded: "أُضيف مؤخرًا",
-                games: "الألعاب", movies: "الأفلام"
+                games: "الألعاب", movies: "الأفلام",
+                schedule: "جدول العرض", airingDay: "يوم الحلقة", airingTime: "وقت الحلقة", notAiring: "غير محدد",
+                daySat: "السبت", daySun: "الأحد", dayMon: "الإثنين", dayTue: "الثلاثاء", dayWed: "الأربعاء", dayThu: "الخميس", dayFri: "الجمعة",
+                scheduleEmpty: "لا يوجد أي عنصر تشاهده الآن له يوم عرض محدد. عدّل عنصرًا لإضافة يوم العرض.", scheduleDesc: "العناصر التي تشاهدها حاليًا، مُرتّبة حسب يوم صدور الحلقة الجديدة."
             }
         };
 
@@ -503,11 +509,14 @@
             accessToken = null;
             driveFileId = null;
             currentAccount = null;
+            signInLock = false;
             renderAccountPicker();
             document.getElementById('appContainer').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('loginStatus').innerText = '';
         }
+
+        let signInLock = false; // prevents two overlapping sign-in attempts from racing each other
 
         function initGoogleAuth() {
             if (typeof google === 'undefined' || !google.accounts) {
@@ -519,9 +528,9 @@
                 scope: DRIVE_SCOPE,
                 callback: async (response) => {
                     if (response.error) {
+                        signInLock = false;
                         // A silent, automatic attempt failing quietly is expected - only show an error
-                        // message if the user explicitly asked to sign in (pendingHint was set on purpose,
-                        // or this wasn't a silent auto-attempt).
+                        // message if the user explicitly asked to sign in.
                         if (!autoAttemptInProgress) {
                             document.getElementById('loginStatus').innerText =
                                 (document.documentElement.lang === 'ar' ? "فشل تسجيل الدخول: " : "Sign-in failed: ") + response.error;
@@ -529,6 +538,10 @@
                         autoAttemptInProgress = false;
                         return;
                     }
+                    // If the app is already signed in and loaded (e.g. a stray duplicate callback
+                    // arrived after a first successful one), ignore it instead of reloading and
+                    // racing with the data already on screen.
+                    if (accessToken && currentAccount) { autoAttemptInProgress = false; return; }
                     autoAttemptInProgress = false;
                     accessToken = response.access_token;
                     document.getElementById('loginStatus').innerText =
@@ -541,6 +554,7 @@
                         console.error('Could not fetch profile', e);
                     }
                     await initApp();
+                    signInLock = false;
                     renderSidebarAccountWidget();
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('appContainer').classList.remove('hidden');
@@ -557,7 +571,8 @@
             // This can silently fail (e.g. session expired, browser blocked it) - in that
             // case the normal sign-in / account picker is shown instead.
             const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
-            if (!lastEmail || GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE')) return;
+            if (!lastEmail || GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE') || signInLock) return;
+            signInLock = true;
             autoAttemptInProgress = true;
             document.getElementById('loginStatus').innerText =
                 document.documentElement.lang === 'ar' ? "جارٍ محاولة تسجيل الدخول التلقائي..." : "Trying automatic sign-in...";
@@ -565,11 +580,13 @@
                 tokenClient.requestAccessToken({ prompt: '', hint: lastEmail });
             } catch (e) {
                 autoAttemptInProgress = false;
+                signInLock = false;
             }
             // Clear the "trying..." message after a moment if nothing happened (e.g. popup blocked)
             setTimeout(() => {
                 if (autoAttemptInProgress) {
                     autoAttemptInProgress = false;
+                    signInLock = false;
                     document.getElementById('loginStatus').innerText = '';
                 }
             }, 4000);
@@ -577,6 +594,8 @@
 
         function signInAs(email) {
             if (!tokenClient) { initGoogleAuth(); setTimeout(() => signInAs(email), 300); return; }
+            if (signInLock) return; // a sign-in is already in progress - ignore extra taps
+            signInLock = true;
             tokenClient.requestAccessToken({ prompt: '', hint: email });
         }
 
@@ -586,6 +605,8 @@
                 return;
             }
             if (!tokenClient) { initGoogleAuth(); setTimeout(signIn, 300); return; }
+            if (signInLock) return; // a sign-in is already in progress - ignore extra taps
+            signInLock = true;
             tokenClient.requestAccessToken({ prompt: 'select_account consent' });
         }
 
@@ -613,10 +634,11 @@
         }
 
         async function findDriveFile() {
-            const res = await fetch(
-                `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27${DRIVE_FILE_NAME}%27&fields=files(id,name)`,
-                { headers: { Authorization: `Bearer ${accessToken}` } }
-            );
+            const q = `name = '${DRIVE_FILE_NAME}' and trashed = false`;
+            const params = new URLSearchParams({ spaces: 'appDataFolder', q: q, fields: 'files(id,name)' });
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
             if (!res.ok) throw new Error('Drive list request failed: ' + res.status);
             const data = await res.json();
             return (data.files && data.files.length > 0) ? data.files[0].id : null;
@@ -648,6 +670,17 @@
                     ? "Could not load your data from Google Drive. Starting with an empty archive."
                     : "تعذر تحميل بياناتك من Google Drive. سيتم البدء بسجل فارغ.");
             }
+        }
+
+        async function manualLoadFromDrive() {
+            if (!accessToken) return;
+            setSyncStatus(state.settings.lang === 'ar' ? 'جارٍ البحث عن ملفك في Drive...' : 'Searching for your file on Drive...', false);
+            driveFileId = null; // force a fresh search instead of reusing a possibly-stale id
+            await loadState();
+            if (state.data.length === 0) populateInitialData();
+            applySettings();
+            renderSidebar();
+            navigate(currentView || 'dashboard');
         }
 
         function saveState() {
@@ -764,6 +797,7 @@
                 case 'game': renderLibrary(container, 'game'); break;
                 case 'favorites': renderLibrary(container, 'all', (i) => i.favorite); break;
                 case 'watchingNow': renderLibrary(container, 'all', (i) => i.status === 'watching'); break;
+                case 'schedule': renderSchedule(container); break;
                 case 'completed': renderLibrary(container, 'all', (i) => i.status === 'completed'); break;
                 case 'planTo': renderLibrary(container, 'all', (i) => i.status === 'planto'); break;
                 case 'rankings': renderRankings(container); break;
@@ -781,6 +815,7 @@
                 { id: 'dashboard', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
                 { id: 'library', icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' },
                 { id: 'watchingNow', icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
+                { id: 'schedule', icon: 'M8 2v4 M16 2v4 M3 10h18 M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
                 { id: 'completed', icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3' },
                 { id: 'planTo', icon: 'M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
                 { id: 'favorites', icon: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' },
@@ -879,6 +914,57 @@
                     <div class="media-info">
                         <div class="media-title">${item.title}</div>
                         <div class="media-meta">${t(item.category)} • ${item.year || '-'}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSchedule(container) {
+            const days = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'];
+            const watching = state.data.filter(i => i.status === 'watching' && (i.category === 'anime' || i.category === 'series'));
+            const grouped = {};
+            days.forEach(d => grouped[d] = []);
+            const unscheduled = [];
+            watching.forEach(i => {
+                if (i.airingDay && grouped[i.airingDay]) grouped[i.airingDay].push(i);
+                else unscheduled.push(i);
+            });
+
+            const hasAny = days.some(d => grouped[d].length > 0);
+
+            container.innerHTML = `
+                <p style="color:var(--text-muted); margin-bottom:1rem;">${t('scheduleDesc')}</p>
+                ${!hasAny ? `<div style="text-align:center; padding:2rem; color:var(--text-muted)">${t('scheduleEmpty')}</div>` : ''}
+                <div class="flex-col gap-4">
+                    ${days.map(d => grouped[d].length ? `
+                        <div>
+                            <h4 style="color:var(--primary); margin-bottom:0.75rem;">${t('day' + d.charAt(0).toUpperCase() + d.slice(1))}</h4>
+                            <div class="media-grid">
+                                ${grouped[d].map(i => generateScheduleCard(i)).join('')}
+                            </div>
+                        </div>
+                    ` : '').join('')}
+                    ${unscheduled.length ? `
+                        <div>
+                            <h4 style="color:var(--text-muted); margin-bottom:0.75rem;">${t('notAiring')}</h4>
+                            <div class="media-grid">
+                                ${unscheduled.map(i => generateScheduleCard(i)).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function generateScheduleCard(item) {
+            const coverSrc = item.cover || `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='150' fill='${encodeURIComponent('var(--surface-hover)')}'><rect width='100%' height='100%'/></svg>`;
+            return `
+                <div class="media-card" data-title="${item.title}" onclick="openDetails('${item.id}')">
+                    <img src="${coverSrc}" class="media-cover" alt="${item.title}">
+                    ${item.airingTime ? `<span class="badge" style="background:var(--primary)">${item.airingTime}</span>` : ''}
+                    <div class="media-info">
+                        <div class="media-title">${item.title}</div>
+                        <div class="media-meta">${t(item.category)} • ${item.episodes ? item.episodes + ' ' + t('episodes') : ''}</div>
                     </div>
                 </div>
             `;
@@ -1011,6 +1097,9 @@
                         <button class="btn btn-primary" onclick="manualSaveToDrive()">
                             ${state.settings.lang === 'ar' ? 'حفظ الآن في Google Drive' : 'Save now to Google Drive'}
                         </button>
+                        <button class="btn btn-surface" onclick="manualLoadFromDrive()">
+                            ${state.settings.lang === 'ar' ? 'البحث عن ملفي وتحميله من Drive' : 'Search & load my file from Drive'}
+                        </button>
                         <div id="syncStatusSettings" style="font-size:0.85rem; color:var(--text-muted); min-height:1.2rem;"></div>
 
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
@@ -1070,6 +1159,20 @@
                     <div><label>${t('seasons')}</label><input type="number" id="itemSeasons" class="input" min="1" value="1"></div>
                     <div><label>${t('episodes')}</label><input type="number" id="itemEpisodes" class="input" min="1"></div>
                     <div><label>${t('duration')}</label><input type="number" id="itemDuration" class="input" placeholder="e.g. 24"></div>
+                    <div>
+                        <label>${t('airingDay')}</label>
+                        <select id="itemAiringDay" class="input">
+                            <option value="">${t('notAiring')}</option>
+                            <option value="sat">${t('daySat')}</option>
+                            <option value="sun">${t('daySun')}</option>
+                            <option value="mon">${t('dayMon')}</option>
+                            <option value="tue">${t('dayTue')}</option>
+                            <option value="wed">${t('dayWed')}</option>
+                            <option value="thu">${t('dayThu')}</option>
+                            <option value="fri">${t('dayFri')}</option>
+                        </select>
+                    </div>
+                    <div><label>${t('airingTime')}</label><input type="text" id="itemAiringTime" class="input" placeholder="20:00"></div>
                 `;
             } else if (cat === 'game') {
                 container.innerHTML = `
@@ -1114,6 +1217,8 @@
                 item.seasons = document.getElementById('itemSeasons')?.value;
                 item.episodes = document.getElementById('itemEpisodes')?.value;
                 item.duration = document.getElementById('itemDuration')?.value;
+                item.airingDay = document.getElementById('itemAiringDay')?.value || '';
+                item.airingTime = document.getElementById('itemAiringTime')?.value || '';
             } else if (cat === 'game') {
                 item.platform = document.getElementById('itemPlatform')?.value;
                 item.hoursPlayed = document.getElementById('itemHours')?.value;
@@ -1194,6 +1299,8 @@
                     if(document.getElementById('itemSeasons')) document.getElementById('itemSeasons').value = currentItem.seasons || 1;
                     if(document.getElementById('itemEpisodes')) document.getElementById('itemEpisodes').value = currentItem.episodes || '';
                     if(document.getElementById('itemDuration')) document.getElementById('itemDuration').value = currentItem.duration || '';
+                    if(document.getElementById('itemAiringDay')) document.getElementById('itemAiringDay').value = currentItem.airingDay || '';
+                    if(document.getElementById('itemAiringTime')) document.getElementById('itemAiringTime').value = currentItem.airingTime || '';
                 } else if (currentItem.category === 'game') {
                     if(document.getElementById('itemPlatform')) document.getElementById('itemPlatform').value = currentItem.platform || '';
                     if(document.getElementById('itemHours')) document.getElementById('itemHours').value = currentItem.hoursPlayed || '';
