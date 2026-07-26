@@ -49,6 +49,22 @@
             --bg: #000000; --surface: #000000; --surface-hover: #111111;
             --primary: #ff3333; --text: #ffffff; --text-muted: #888888; --border: #333333;
         }
+        [data-theme="sunset"] {
+            --bg: #1a0f0a; --surface: #2b1710; --surface-hover: #3d2117;
+            --primary: #ff7849; --primary-hover: #ff5722; --text: #fff3ec; --text-muted: #d9a98d; --border: #4a2a1c;
+        }
+        [data-theme="mint"] {
+            --bg: #06120f; --surface: #0d211b; --surface-hover: #123027;
+            --primary: #2dd4a7; --primary-hover: #22b58c; --text: #e6fff7; --text-muted: #8fd9c4; --border: #1a3d33;
+        }
+        [data-theme="rose"] {
+            --bg: #1a0a12; --surface: #2b0f1e; --surface-hover: #3d1529;
+            --primary: #ec4899; --primary-hover: #db2777; --text: #ffe9f3; --text-muted: #e0a0c0; --border: #4a1c33;
+        }
+        [data-theme="slate"] {
+            --bg: #16181d; --surface: #1e2127; --surface-hover: #282c34;
+            --primary: #94a3b8; --primary-hover: #cbd5e1; --text: #f1f5f9; --text-muted: #7c8798; --border: #333844;
+        }
 
         /* --- BASE STYLES --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -177,13 +193,29 @@
             Chronicle
         </div>
         <p id="loginDesc">Sign in with your Google account to sync your archive across every device.<br>سجّل الدخول بحساب Google لمزامنة أرشيفك عبر جميع أجهزتك.</p>
-        <button class="google-btn" onclick="signIn()">
+        <div id="accountPicker" class="flex gap-4 hidden" style="flex-wrap:wrap; justify-content:center; max-width:400px;"></div>
+        <button class="google-btn" id="mainSignInBtn" onclick="signIn()">
             <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 16 4 9.1 8.5 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.3c-2 1.4-4.6 2.3-7.2 2.3-5.3 0-9.7-3.1-11.3-7.7l-6.5 5C9 39.6 15.9 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.3C40.5 36.3 44 30.7 44 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
             <span id="signInLabel">Sign in with Google / تسجيل الدخول بحساب Google</span>
         </button>
         <div id="loginStatus"></div>
         <p style="font-size:0.75rem; opacity:0.6; max-width:340px;">Your data is stored privately in your own Google account.<br>بياناتك تُحفظ بشكل خاص في حساب Google الخاص بك فقط.</p>
     </div>
+
+    <style>
+        .account-avatar-btn { display:flex; flex-direction:column; align-items:center; gap:0.4rem; background:none; padding:0.5rem; border-radius:var(--radius); }
+        .account-avatar-btn:hover { background: rgba(255,255,255,0.08); }
+        .account-avatar-btn img, .account-avatar-btn .avatar-fallback { width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--border); }
+        .account-avatar-btn .avatar-fallback { display:flex; align-items:center; justify-content:center; background:var(--primary); color:#fff; font-weight:bold; font-size:1.4rem; }
+        .account-avatar-btn span { font-size:0.8rem; color:var(--text-muted); max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .account-avatar-btn.add-account .avatar-fallback { background:var(--surface-hover); border:2px dashed var(--border); font-size:1.8rem; }
+        .sidebar-account { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1rem; border-top:1px solid var(--border); cursor:pointer; }
+        .sidebar-account img, .sidebar-account .avatar-fallback { width:32px; height:32px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+        .sidebar-account .avatar-fallback { display:flex; align-items:center; justify-content:center; background:var(--primary); color:#fff; font-size:0.9rem; font-weight:bold; }
+        .sidebar-account .acc-info { flex:1; overflow:hidden; }
+        .sidebar-account .acc-name { font-size:0.85rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .sidebar-account .acc-email { font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    </style>
 
     <div id="appContainer" class="hidden">
     <!-- Sidebar -->
@@ -194,6 +226,9 @@
         </div>
         <div class="nav-items" id="navMenu">
             <!-- Dynamically populated via JS -->
+        </div>
+        <div class="sidebar-account" id="sidebarAccount" onclick="openAccountSwitcher()">
+            <!-- Populated via JS with avatar/name -->
         </div>
     </aside>
 
@@ -349,19 +384,19 @@
                 games: "Games", movies: "Movies"
             },
             ar: {
-                appName: "سجل", dashboard: "لوحة القيادة", library: "مكتبتي", watchingNow: "أشاهده حالياً",
-                completed: "مكتمل", planTo: "أنوي مشاهدته", favorites: "المفضلة", rankings: "أفضل 10 تصنيفات",
-                achievements: "الإنجازات", timeline: "الجدول الزمني", statistics: "الإحصائيات", settings: "الإعدادات",
-                addNew: "إضافة جديد", addNewItem: "إضافة وسائط", title: "العنوان *", category: "الفئة", status: "الحالة",
-                rating: "التقييم (1-10)", year: "سنة الإصدار", coverImage: "صورة الغلاف", notes: "ملاحظات شخصية",
-                addToFav: "أضف للمفضلة", save: "حفظ", edit: "تعديل", delete: "حذف", dropped: "تم إسقاطه",
-                totalItems: "إجمالي العناصر", totalTime: "الوقت الإجمالي", favCount: "المفضلة",
-                all: "الكل", anime: "أنمي", movie: "أفلام", series: "مسلسلات", game: "ألعاب", search: "بحث...",
-                episodes: "إجمالي الحلقات", seasons: "المواسم", duration: "المدة (دقائق)", platform: "المنصة", hoursPlayed: "ساعات اللعب",
+                appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
+                completed: "منتهية", planTo: "قائمة الانتظار", favorites: "المفضلة", rankings: "الأفضل 10",
+                achievements: "الإنجازات", timeline: "السجل الزمني", statistics: "الإحصائيات", settings: "الإعدادات",
+                addNew: "إضافة", addNewItem: "إضافة عنصر جديد", title: "العنوان *", category: "الفئة", status: "الحالة",
+                rating: "التقييم (من 1 إلى 10)", year: "سنة الإصدار", coverImage: "صورة الغلاف", notes: "ملاحظات",
+                addToFav: "أضِف إلى المفضلة", save: "حفظ", edit: "تعديل", delete: "حذف", dropped: "متروكة",
+                totalItems: "عدد العناصر", totalTime: "إجمالي وقت المشاهدة", favCount: "عدد المفضلة",
+                all: "الكل", anime: "أنمي", movie: "أفلام", series: "مسلسلات", game: "ألعاب", search: "ابحث...",
+                episodes: "إجمالي الحلقات", seasons: "عدد المواسم", duration: "المدة (بالدقائق)", platform: "المنصة", hoursPlayed: "ساعات اللعب",
                 language: "اللغة", theme: "المظهر", exportData: "تصدير نسخة احتياطية", importData: "استيراد نسخة احتياطية",
-                achievementUnlocked: "تم فتح إنجاز!", nothingHere: "لا توجد عناصر. ابدأ بإضافة البعض!",
-                rankDesc: "اسحب وأفلت العناصر المكتملة لترتيب أفضل 10.", recentlyAdded: "أضيف مؤخراً",
-                games: "ألعاب", movies: "أفلام"
+                achievementUnlocked: "إنجاز جديد!", nothingHere: "لا توجد عناصر بعد، ابدأ بإضافة أول عنصر!",
+                rankDesc: "اسحب العناصر المكتملة وأفلتها لترتيب أفضل 10 لديك.", recentlyAdded: "أُضيف مؤخرًا",
+                games: "الألعاب", movies: "الأفلام"
             }
         };
 
@@ -390,13 +425,89 @@
         //    to "Authorized JavaScript origins". http://localhost:PORT also works for testing.
         // 4) Paste the Client ID below.
         const GOOGLE_CLIENT_ID = "758332199660-euui3k1lqp6rtubopkpfouj0ccb515nr.apps.googleusercontent.com";
-        const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
+        const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
         const DRIVE_FILE_NAME = "chronicle_data.json";
+        const ACCOUNTS_KEY = "chronicle_accounts";
+        const LAST_EMAIL_KEY = "chronicle_last_email";
 
         let accessToken = null;
         let driveFileId = null;
         let tokenClient = null;
         let saveTimeout = null;
+        let currentAccount = null; // { email, name, picture }
+
+        // --- ACCOUNT STORAGE (browser-local list of previously used Google accounts) ---
+        function getStoredAccounts() {
+            try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY)) || []; }
+            catch (e) { return []; }
+        }
+        function saveStoredAccounts(list) {
+            localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(list));
+        }
+        function upsertAccount(account) {
+            const list = getStoredAccounts();
+            const idx = list.findIndex(a => a.email === account.email);
+            if (idx >= 0) list[idx] = account; else list.push(account);
+            saveStoredAccounts(list);
+        }
+        function removeStoredAccount(email) {
+            saveStoredAccounts(getStoredAccounts().filter(a => a.email !== email));
+            renderAccountPicker();
+        }
+
+        async function fetchUserProfile(token) {
+            const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('userinfo failed: ' + res.status);
+            const data = await res.json();
+            return { email: data.email, name: data.name || data.email, picture: data.picture || '' };
+        }
+
+        function renderAccountPicker() {
+            const wrap = document.getElementById('accountPicker');
+            const accounts = getStoredAccounts();
+            if (accounts.length === 0) { wrap.classList.add('hidden'); wrap.innerHTML = ''; return; }
+            wrap.classList.remove('hidden');
+            wrap.innerHTML = accounts.map(a => `
+                <button class="account-avatar-btn" onclick="signInAs('${a.email.replace(/'/g, "\\'")}')">
+                    ${a.picture
+                        ? `<img src="${a.picture}" referrerpolicy="no-referrer">`
+                        : `<div class="avatar-fallback">${(a.name || a.email || '?').charAt(0).toUpperCase()}</div>`}
+                    <span>${a.name || a.email}</span>
+                </button>
+            `).join('') + `
+                <button class="account-avatar-btn add-account" onclick="signIn()">
+                    <div class="avatar-fallback">+</div>
+                    <span id="addAccountLabel">Add account<br>حساب آخر</span>
+                </button>
+            `;
+        }
+
+        function renderSidebarAccountWidget() {
+            const el = document.getElementById('sidebarAccount');
+            if (!el || !currentAccount) return;
+            el.innerHTML = `
+                ${currentAccount.picture
+                    ? `<img src="${currentAccount.picture}" referrerpolicy="no-referrer">`
+                    : `<div class="avatar-fallback">${(currentAccount.name || currentAccount.email || '?').charAt(0).toUpperCase()}</div>`}
+                <div class="acc-info">
+                    <div class="acc-name">${currentAccount.name || ''}</div>
+                    <div class="acc-email">${currentAccount.email || ''}</div>
+                </div>
+            `;
+        }
+
+        function openAccountSwitcher() {
+            // Go back to the login screen to pick a different account, without deleting saved data
+            accessToken = null;
+            driveFileId = null;
+            currentAccount = null;
+            renderAccountPicker();
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('loginStatus').innerText = '';
+        }
 
         function initGoogleAuth() {
             if (typeof google === 'undefined' || !google.accounts) {
@@ -408,18 +519,65 @@
                 scope: DRIVE_SCOPE,
                 callback: async (response) => {
                     if (response.error) {
-                        document.getElementById('loginStatus').innerText =
-                            (document.documentElement.lang === 'ar' ? "فشل تسجيل الدخول: " : "Sign-in failed: ") + response.error;
+                        // A silent, automatic attempt failing quietly is expected - only show an error
+                        // message if the user explicitly asked to sign in (pendingHint was set on purpose,
+                        // or this wasn't a silent auto-attempt).
+                        if (!autoAttemptInProgress) {
+                            document.getElementById('loginStatus').innerText =
+                                (document.documentElement.lang === 'ar' ? "فشل تسجيل الدخول: " : "Sign-in failed: ") + response.error;
+                        }
+                        autoAttemptInProgress = false;
                         return;
                     }
+                    autoAttemptInProgress = false;
                     accessToken = response.access_token;
                     document.getElementById('loginStatus').innerText =
                         document.documentElement.lang === 'ar' ? "جارٍ تحميل بياناتك..." : "Loading your data...";
+                    try {
+                        currentAccount = await fetchUserProfile(accessToken);
+                        upsertAccount(currentAccount);
+                        localStorage.setItem(LAST_EMAIL_KEY, currentAccount.email);
+                    } catch (e) {
+                        console.error('Could not fetch profile', e);
+                    }
                     await initApp();
+                    renderSidebarAccountWidget();
                     document.getElementById('loginScreen').classList.add('hidden');
                     document.getElementById('appContainer').classList.remove('hidden');
                 }
             });
+            renderAccountPicker();
+            attemptSilentSignIn();
+        }
+
+        let autoAttemptInProgress = false;
+        function attemptSilentSignIn() {
+            // Best-effort: try to sign the user back in automatically using the last used
+            // account, so they don't have to tap "Sign in" every time they open the site.
+            // This can silently fail (e.g. session expired, browser blocked it) - in that
+            // case the normal sign-in / account picker is shown instead.
+            const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
+            if (!lastEmail || GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE')) return;
+            autoAttemptInProgress = true;
+            document.getElementById('loginStatus').innerText =
+                document.documentElement.lang === 'ar' ? "جارٍ محاولة تسجيل الدخول التلقائي..." : "Trying automatic sign-in...";
+            try {
+                tokenClient.requestAccessToken({ prompt: '', hint: lastEmail });
+            } catch (e) {
+                autoAttemptInProgress = false;
+            }
+            // Clear the "trying..." message after a moment if nothing happened (e.g. popup blocked)
+            setTimeout(() => {
+                if (autoAttemptInProgress) {
+                    autoAttemptInProgress = false;
+                    document.getElementById('loginStatus').innerText = '';
+                }
+            }, 4000);
+        }
+
+        function signInAs(email) {
+            if (!tokenClient) { initGoogleAuth(); setTimeout(() => signInAs(email), 300); return; }
+            tokenClient.requestAccessToken({ prompt: '', hint: email });
         }
 
         function signIn() {
@@ -428,15 +586,18 @@
                 return;
             }
             if (!tokenClient) { initGoogleAuth(); setTimeout(signIn, 300); return; }
-            tokenClient.requestAccessToken({ prompt: 'consent' });
+            tokenClient.requestAccessToken({ prompt: 'select_account consent' });
         }
 
         function signOut() {
             if (accessToken) {
                 google.accounts.oauth2.revoke(accessToken, () => {});
             }
+            if (currentAccount) removeStoredAccount(currentAccount.email);
+            localStorage.removeItem(LAST_EMAIL_KEY);
             accessToken = null;
             driveFileId = null;
+            currentAccount = null;
             location.reload();
         }
 
@@ -447,6 +608,7 @@
             if (state.data.length === 0) populateInitialData();
             applySettings();
             renderSidebar();
+            renderSidebarAccountWidget();
             navigate('dashboard');
         }
 
@@ -826,6 +988,10 @@
                             <option value="forest" ${state.settings.theme === 'forest' ? 'selected' : ''}>Forest</option>
                             <option value="purple-galaxy" ${state.settings.theme === 'purple-galaxy' ? 'selected' : ''}>Purple Galaxy</option>
                             <option value="amoled" ${state.settings.theme === 'amoled' ? 'selected' : ''}>AMOLED Black</option>
+                            <option value="sunset" ${state.settings.theme === 'sunset' ? 'selected' : ''}>Sunset</option>
+                            <option value="mint" ${state.settings.theme === 'mint' ? 'selected' : ''}>Mint</option>
+                            <option value="rose" ${state.settings.theme === 'rose' ? 'selected' : ''}>Rose</option>
+                            <option value="slate" ${state.settings.theme === 'slate' ? 'selected' : ''}>Slate</option>
                         </select>
 
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
@@ -846,8 +1012,27 @@
                             ${state.settings.lang === 'ar' ? 'حفظ الآن في Google Drive' : 'Save now to Google Drive'}
                         </button>
                         <div id="syncStatusSettings" style="font-size:0.85rem; color:var(--text-muted); min-height:1.2rem;"></div>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+                        <label>${state.settings.lang === 'ar' ? 'الحسابات المحفوظة على هذا الجهاز' : 'Accounts saved on this device'}</label>
+                        <div class="flex-col gap-2">
+                            ${getStoredAccounts().map(a => `
+                                <div class="flex items-center gap-2" style="padding:0.5rem; background:var(--bg); border-radius:var(--radius);">
+                                    ${a.picture
+                                        ? `<img src="${a.picture}" referrerpolicy="no-referrer" style="width:28px;height:28px;border-radius:50%;">`
+                                        : `<div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:bold;">${(a.name||a.email||'?').charAt(0).toUpperCase()}</div>`}
+                                    <div style="flex:1; font-size:0.85rem;">${a.name || a.email}${a.email === currentAccount?.email ? (state.settings.lang === 'ar' ? ' (الحالي)' : ' (current)') : ''}</div>
+                                    ${a.email !== currentAccount?.email ? `<button class="btn btn-surface" style="padding:0.25rem 0.6rem; font-size:0.8rem;" onclick="removeStoredAccount('${a.email.replace(/'/g, "\\'")}'); navigate('settings')">${state.settings.lang === 'ar' ? 'إزالة' : 'Remove'}</button>` : ''}
+                                </div>
+                            `).join('') || `<p style="color:var(--text-muted); font-size:0.85rem;">${state.settings.lang === 'ar' ? 'لا توجد حسابات محفوظة أخرى.' : 'No other saved accounts.'}</p>`}
+                            <button class="btn btn-surface" onclick="openAccountSwitcher()">
+                                ${state.settings.lang === 'ar' ? 'تبديل الحساب' : 'Switch account'}
+                            </button>
+                        </div>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
                         <button class="btn btn-surface" style="border-color:var(--danger); color:var(--danger)" onclick="signOut()">
-                            ${state.settings.lang === 'ar' ? 'تسجيل الخروج' : 'Sign out'}
+                            ${state.settings.lang === 'ar' ? 'تسجيل الخروج وحذف هذا الحساب من الجهاز' : 'Sign out and remove this account from device'}
                         </button>
                     </div>
                 </div>
@@ -1086,13 +1271,13 @@
                     if(parsed.data) {
                         state = parsed;
                         saveState();
-                        alert("Backup restored successfully!");
+                        alert(state.settings.lang === 'ar' ? "تمت استعادة النسخة الاحتياطية بنجاح!" : "Backup restored successfully!");
                         applySettings();
                         renderSidebar();
                         navigate(currentView);
                     }
                 } catch (err) {
-                    alert("Invalid backup file.");
+                    alert(state.settings.lang === 'ar' ? "ملف النسخة الاحتياطية غير صالح." : "Invalid backup file.");
                 }
             };
             reader.readAsText(file);
