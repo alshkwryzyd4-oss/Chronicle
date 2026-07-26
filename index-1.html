@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronicle | Personal Media Archive</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* --- THEME & VARIABLES --- */
+        :root {
+            /* Dark Theme (Default) */
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --surface-hover: #2a2a2a;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text: #ffffff;
+            --text-muted: #9ca3af;
+            --border: #333333;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-display: 'Fraunces', Georgia, serif;
+            --radius: 8px;
+            --transition: 0.3s ease;
+        }
+
+        [data-theme="light"] {
+            --bg: #f3f4f6; --surface: #ffffff; --surface-hover: #f9fafb;
+            --primary: #2563eb; --text: #111827; --text-muted: #4b5563; --border: #e5e7eb;
+        }
+        [data-theme="cyberpunk"] {
+            --bg: #0f0920; --surface: #1f1244; --surface-hover: #2d1b66;
+            --primary: #f0f; --primary-hover: #d0d; --text: #0ff; --text-muted: #a0a0ff; --border: #f0f;
+        }
+        [data-theme="ocean"] {
+            --bg: #001a2c; --surface: #002d4c; --surface-hover: #00406c;
+            --primary: #00a8cc; --text: #e0f7fa; --text-muted: #80deea; --border: #005c8a;
+        }
+        [data-theme="forest"] {
+            --bg: #0f1f14; --surface: #1a3322; --surface-hover: #244730;
+            --primary: #4caf50; --text: #e8f5e9; --text-muted: #a5d6a7; --border: #2e6b3c;
+        }
+        [data-theme="purple-galaxy"] {
+            --bg: #0f0016; --surface: #240036; --surface-hover: #3a0056;
+            --primary: #9d4edd; --text: #f3e8ff; --text-muted: #d8b4e2; --border: #5a189a;
+        }
+        [data-theme="amoled"] {
+            --bg: #000000; --surface: #000000; --surface-hover: #111111;
+            --primary: #ff3333; --text: #ffffff; --text-muted: #888888; --border: #333333;
+        }
+        [data-theme="sunset"] {
+            --bg: #1a0f0a; --surface: #2b1710; --surface-hover: #3d2117;
+            --primary: #ff7849; --primary-hover: #ff5722; --text: #fff3ec; --text-muted: #d9a98d; --border: #4a2a1c;
+        }
+        [data-theme="mint"] {
+            --bg: #06120f; --surface: #0d211b; --surface-hover: #123027;
+            --primary: #2dd4a7; --primary-hover: #22b58c; --text: #e6fff7; --text-muted: #8fd9c4; --border: #1a3d33;
+        }
+        [data-theme="rose"] {
+            --bg: #1a0a12; --surface: #2b0f1e; --surface-hover: #3d1529;
+            --primary: #ec4899; --primary-hover: #db2777; --text: #ffe9f3; --text-muted: #e0a0c0; --border: #4a1c33;
+        }
+        [data-theme="slate"] {
+            --bg: #16181d; --surface: #1e2127; --surface-hover: #282c34;
+            --primary: #94a3b8; --primary-hover: #cbd5e1; --text: #f1f5f9; --text-muted: #7c8798; --border: #333844;
+        }
+
+        /* --- BASE STYLES --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-family); background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; height: 100vh; transition: background-color var(--transition), color var(--transition); }
+        h1, h2, h3, h4, .brand, .brand-lg { font-family: var(--font-display); letter-spacing: -0.01em; }
+        #headerTitle { font-weight: 600; }
+        a { text-decoration: none; color: inherit; }
+        button, input, select, textarea { font-family: inherit; outline: none; border: none; }
+        button { cursor: pointer; transition: all var(--transition); background: none; color: inherit; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--surface-hover); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* --- LAYOUT UTILITIES --- */
+        .flex { display: flex; }
+        .flex-col { display: flex; flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; } .gap-4 { gap: 1rem; } .gap-6 { gap: 1.5rem; }
+        .p-4 { padding: 1rem; } .p-6 { padding: 1.5rem; }
+        .w-full { width: 100%; } .h-full { height: 100%; }
+        .grid { display: grid; }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .hidden { display: none !important; }
+        
+        /* Logical Properties for RTL */
+        .ms-auto { margin-inline-start: auto; }
+        .me-2 { margin-inline-end: 0.5rem; }
+        .ms-2 { margin-inline-start: 0.5rem; }
+        .ps-4 { padding-inline-start: 1rem; }
+        .text-start { text-align: start; }
+        .text-center { text-align: center; }
+
+        /* --- COMPONENTS --- */
+        .btn { padding: 0.5rem 1rem; border-radius: var(--radius); font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn-primary { background-color: var(--primary); color: #fff; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-surface { background-color: var(--surface); border: 1px solid var(--border); }
+        .btn-surface:hover { background-color: var(--surface-hover); }
+        .btn-danger { background-color: var(--danger); color: #fff; }
+
+        .input { width: 100%; padding: 0.75rem; border-radius: var(--radius); background-color: var(--bg); border: 1px solid var(--border); color: var(--text); margin-bottom: 1rem; }
+        .input:focus { border-color: var(--primary); }
+        
+        .card { background-color: var(--surface); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); }
+        .media-card { position: relative; border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: transform var(--transition); background-color: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column;}
+        .media-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .media-cover { width: 100%; aspect-ratio: 2/3; object-fit: cover; background-color: var(--bg); }
+        .media-info { padding: 0.75rem; flex: 1; display: flex; flex-direction: column; }
+        .media-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .media-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .badge { position: absolute; top: 0.5rem; inset-inline-end: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; background: rgba(0,0,0,0.7); color: #fff; }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: 250px; background-color: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; transition: transform var(--transition); z-index: 50; }
+        .brand { padding: 1.5rem; font-size: 1.5rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border); }
+        .nav-items { flex: 1; overflow-y: auto; padding: 1rem 0; }
+        .nav-item { padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; color: var(--text-muted); font-weight: 500; cursor: pointer; transition: all var(--transition); }
+        .nav-item:hover, .nav-item.active { background-color: var(--surface-hover); color: var(--primary); border-inline-start: 4px solid var(--primary); }
+        
+        /* --- MAIN CONTENT --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .header { height: 60px; background-color: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; justify-content: space-between; }
+        .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+        /* --- MODALS --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity var(--transition); backdrop-filter: blur(4px); }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-content { background-color: var(--surface); border-radius: var(--radius); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); transform: translateY(20px); transition: transform var(--transition); }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 1.5rem; }
+
+        /* --- SPECIFIC VIEWS --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { text-align: center; padding: 1.5rem; }
+        .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary); }
+        
+        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
+        
+        .achievement-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); opacity: 0.5; filter: grayscale(1); transition: all 0.5s; }
+        .achievement-card.unlocked { opacity: 1; filter: grayscale(0); border-color: var(--warning); background: rgba(245, 158, 11, 0.1); }
+        .ach-icon { font-size: 2rem; }
+
+        .timeline-item { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .timeline-date { min-width: 100px; color: var(--text-muted); font-size: 0.85rem; }
+        .timeline-content { background: var(--surface); padding: 1rem; border-radius: var(--radius); flex: 1; border: 1px solid var(--border); border-inline-start: 4px solid var(--primary); }
+
+        .rank-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .rank-item { padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; gap: 1rem; cursor: grab; }
+        .rank-number { font-size: 1.5rem; font-weight: bold; color: var(--primary); width: 30px; }
+
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--primary); color: var(--text); padding: 1rem; border-radius: var(--radius); box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.3s; display: flex; align-items: center; gap: 1rem;}
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        .mobile-nav-btn { display: none; }
+
+        /* --- LOGIN SCREEN --- */
+        #loginScreen { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem; text-align: center; padding: 1.5rem; overflow: hidden; }
+        #loginScreen::before, #loginScreen::after {
+            content: ''; position: absolute; width: 45vmax; height: 45vmax; border-radius: 50%; filter: blur(80px); opacity: 0.18; z-index: -1;
+            background: radial-gradient(circle, var(--primary), transparent 70%);
+        }
+        #loginScreen::before { top: -15vmax; inset-inline-start: -10vmax; animation: driftA 18s ease-in-out infinite; }
+        #loginScreen::after { bottom: -15vmax; inset-inline-end: -10vmax; animation: driftB 22s ease-in-out infinite; }
+        @keyframes driftA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(6vmax, 4vmax) scale(1.15); } }
+        @keyframes driftB { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-5vmax, -5vmax) scale(1.1); } }
+        #loginScreen > * { animation: loginRise 0.6s ease backwards; }
+        #loginScreen .brand-lg { animation-delay: 0s; }
+        #loginScreen p:first-of-type { animation-delay: 0.08s; }
+        #loginScreen #accountPicker { animation-delay: 0.14s; }
+        #loginScreen .google-btn { animation-delay: 0.2s; }
+        #loginScreen .site-credit { animation-delay: 0.3s; }
+        @keyframes loginRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        #loginScreen .brand-lg { font-size: 2.25rem; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 0.75rem; }
+        #loginScreen p { color: var(--text-muted); max-width: 340px; }
+        .google-btn { display: flex; align-items: center; gap: 0.75rem; background: #fff; color: #1f1f1f; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .google-btn:hover { background: #f5f5f5; transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.3); }
+        #loginStatus { color: var(--text-muted); font-size: 0.9rem; min-height: 1.2rem; }
+        #appContainer { display: flex; width: 100%; height: 100%; }
+        .site-credit { font-size: 0.72rem; color: var(--text-muted); opacity: 0.7; display: flex; align-items: center; gap: 0.3rem; }
+        .site-credit .heart { color: var(--danger); animation: heartbeat 1.8s ease-in-out infinite; display: inline-block; }
+        @keyframes heartbeat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+        /* --- SIGNATURE MOTION: view transitions, active nav, cards, toast --- */
+        @keyframes viewFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #viewContainer.view-fade { animation: viewFadeIn 0.4s cubic-bezier(.2,.8,.2,1); }
+        .nav-item.active { animation: navActivate 0.3s ease; }
+        @keyframes navActivate { from { padding-inline-start: 1rem; } to { padding-inline-start: 1.5rem; } }
+        .media-card { transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition); }
+        .media-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
+        .media-card .media-cover { transition: transform 0.5s ease; }
+        .media-card:hover .media-cover { transform: scale(1.06); }
+        .toast.show { animation: toastPop 0.45s cubic-bezier(.34,1.56,.64,1); }
+        @keyframes toastPop { 0% { transform: translateY(100px) scale(0.9); opacity: 0; } 60% { transform: translateY(-4px) scale(1.02); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        .stat-number { display: inline-block; }
+        @media (prefers-reduced-motion: reduce) {
+            #loginScreen::before, #loginScreen::after, .site-credit .heart { animation: none !important; }
+            #loginScreen > *, #viewContainer.view-fade, .nav-item.active, .toast.show { animation: none !important; }
+            .media-card:hover .media-cover { transform: none; }
+        }
+
+        /* Media Queries */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; height: 100%; transform: translateX(-100%); }
+            [dir="rtl"] .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .mobile-nav-btn { display: block; }
+            .media-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Screen (shown until the user signs in with Google) -->
+    <div id="loginScreen">
+        <div class="brand-lg">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+            Chronicle
+        </div>
+        <p id="loginDesc">Sign in with your Google account to sync your archive across every device.<br>سجّل الدخول بحساب Google لمزامنة أرشيفك عبر جميع أجهزتك.</p>
+        <div id="accountPicker" class="flex gap-4 hidden" style="flex-wrap:wrap; justify-content:center; max-width:400px;"></div>
+        <button class="google-btn" id="mainSignInBtn" onclick="signIn()">
+            <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 16 4 9.1 8.5 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.3c-2 1.4-4.6 2.3-7.2 2.3-5.3 0-9.7-3.1-11.3-7.7l-6.5 5C9 39.6 15.9 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.3C40.5 36.3 44 30.7 44 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
+            <span id="signInLabel">Sign in with Google / تسجيل الدخول بحساب Google</span>
+        </button>
+        <div id="loginStatus"></div>
+        <p style="font-size:0.75rem; opacity:0.6; max-width:340px;">Your data is stored privately in your own Google account.<br>بياناتك تُحفظ بشكل خاص في حساب Google الخاص بك فقط.</p>
+        <div class="site-credit">Chronicle <span class="heart">♥</span> by Zayd Chkouri</div>
+    </div>
+
+    <style>
+        .account-avatar-btn { display:flex; flex-direction:column; align-items:center; gap:0.4rem; background:none; padding:0.5rem; border-radius:var(--radius); }
+        .account-avatar-btn:hover { background: rgba(255,255,255,0.08); }
+        .account-avatar-btn img, .account-avatar-btn .avatar-fallback { width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--border); }
+        .account-avatar-btn .avatar-fallback { display:flex; align-items:center; justify-content:center; background:var(--primary); color:#fff; font-weight:bold; font-size:1.4rem; }
+        .account-avatar-btn span { font-size:0.8rem; color:var(--text-muted); max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .account-avatar-btn.add-account .avatar-fallback { background:var(--surface-hover); border:2px dashed var(--border); font-size:1.8rem; }
+        .sidebar-account { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1rem; border-top:1px solid var(--border); cursor:pointer; }
+        .sidebar-account img, .sidebar-account .avatar-fallback { width:32px; height:32px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+        .sidebar-account .avatar-fallback { display:flex; align-items:center; justify-content:center; background:var(--primary); color:#fff; font-size:0.9rem; font-weight:bold; }
+        .sidebar-account .acc-info { flex:1; overflow:hidden; }
+        .sidebar-account .acc-name { font-size:0.85rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .sidebar-account .acc-email { font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    </style>
+
+    <div id="appContainer" class="hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+            Chronicle
+        </div>
+        <div class="nav-items" id="navMenu">
+            <!-- Dynamically populated via JS -->
+        </div>
+        <div class="sidebar-account" id="sidebarAccount" onclick="openAccountSwitcher()">
+            <!-- Populated via JS with avatar/name -->
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <div class="flex items-center gap-4">
+                <button class="mobile-nav-btn" onclick="toggleSidebar()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <h2 id="headerTitle">Dashboard</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="syncStatus" style="font-size:0.8rem; color:var(--text-muted); white-space:nowrap; max-width:140px; overflow:hidden; text-overflow:ellipsis;"></span>
+                <button class="btn btn-surface" onclick="manualSaveToDrive()" title="Save now">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                </button>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span data-i18n="addNew" class="hidden sm:inline">Add New</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="content-area view-fade" id="viewContainer">
+            <!-- Views injected here -->
+        </div>
+    </main>
+    </div><!-- /#appContainer -->
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle" data-i18n="addNewItem">Add New Item</h3>
+                <button onclick="closeModal('addModal')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm" class="flex-col gap-4">
+                    <input type="hidden" id="itemId">
+                    
+                    <label data-i18n="title">Title *</label>
+                    <input type="text" id="itemTitle" class="input" required>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label data-i18n="category">Category</label>
+                            <select id="itemCategory" class="input" onchange="toggleCategoryFields()">
+                                <option value="anime">Anime</option>
+                                <option value="movie">Movie</option>
+                                <option value="series">TV Series</option>
+                                <option value="game">Video Game</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label data-i18n="status">Status</label>
+                            <select id="itemStatus" class="input">
+                                <option value="watching" data-i18n="watchingNow">Watching Now</option>
+                                <option value="completed" data-i18n="completed">Completed</option>
+                                <option value="planto" data-i18n="planTo">Plan To Watch/Play</option>
+                                <option value="dropped" data-i18n="dropped">Dropped</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Fields Container -->
+                    <div id="dynamicFields" class="grid grid-cols-2 gap-4"></div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label data-i18n="rating">Rating (1-10)</label>
+                            <input type="number" id="itemRating" class="input" min="1" max="10">
+                        </div>
+                        <div>
+                            <label data-i18n="year">Release Year</label>
+                            <input type="number" id="itemYear" class="input">
+                        </div>
+                    </div>
+
+                    <label data-i18n="coverImage">Cover Image (Optional)</label>
+                    <input type="file" id="itemCover" class="input" accept="image/*">
+
+                    <label data-i18n="notes">Personal Notes</label>
+                    <textarea id="itemNotes" class="input" rows="3"></textarea>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        <input type="checkbox" id="itemFavorite" style="width: 20px; height: 20px;">
+                        <label data-i18n="addToFav">Add to Favorites</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full" data-i18n="save">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 id="detTitle" class="media-title" style="font-size:1.5rem"></h3>
+                <button onclick="closeModal('detailsModal')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="modal-body flex-col gap-4">
+                <div class="flex gap-6" style="flex-wrap: wrap;">
+                    <img id="detCover" class="card" style="width: 200px; aspect-ratio: 2/3; object-fit: cover;" src="" alt="Cover">
+                    <div class="flex-col gap-2" style="flex: 1; min-width: 250px;">
+                        <div class="flex gap-2 items-center">
+                            <span id="detCategory" class="badge" style="position:static; display:inline-block"></span>
+                            <span id="detStatus" style="color: var(--text-muted)"></span>
+                        </div>
+                        <p id="detScore" style="font-size: 1.25rem; font-weight: bold; color: var(--warning);"></p>
+                        <p id="detStats" style="color: var(--text-muted);"></p>
+                        <div style="margin-top: 1rem;">
+                            <h4 data-i18n="notes" style="margin-bottom: 0.5rem; color: var(--primary)">Notes</h4>
+                            <p id="detNotes" style="white-space: pre-wrap; font-size: 0.9rem;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-4 justify-end" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <button class="btn btn-danger" onclick="deleteCurrentItem()" data-i18n="delete">Delete</button>
+                    <button class="btn btn-surface" onclick="editCurrentItem()" data-i18n="edit">Edit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="ach-icon">🏆</div>
+        <div>
+            <div style="font-weight:bold; color:var(--warning)" data-i18n="achievementUnlocked">Achievement Unlocked!</div>
+            <div id="toastMsg"></div>
+        </div>
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script>
+        // --- DATA & STATE ---
+        const TRANSLATIONS = {
+            en: {
+                appName: "Chronicle", dashboard: "Dashboard", library: "My Library", watchingNow: "Watching Now",
+                completed: "Completed", planTo: "Plan To Watch", favorites: "Favorites", rankings: "Top 10 Rankings",
+                achievements: "Achievements", timeline: "Timeline", statistics: "Statistics", settings: "Settings",
+                addNew: "Add New", addNewItem: "Add Media", title: "Title *", category: "Category", status: "Status",
+                rating: "Rating (1-10)", year: "Release Year", coverImage: "Cover Image", notes: "Personal Notes",
+                addToFav: "Add to Favorites", save: "Save", edit: "Edit", delete: "Delete", dropped: "Dropped",
+                totalItems: "Total Items", totalTime: "Total Time Spent", favCount: "Favorites",
+                all: "All", anime: "Anime", movie: "Movies", series: "TV Series", game: "Games", search: "Search...",
+                episodes: "Total Episodes", seasons: "Seasons", duration: "Duration (mins)", platform: "Platform", hoursPlayed: "Hours Played",
+                language: "Language", theme: "Theme", exportData: "Export Backup", importData: "Import Backup",
+                achievementUnlocked: "Achievement Unlocked!", nothingHere: "No items found. Start adding some!",
+                rankDesc: "Drag and drop your completed items to rank your Top 10.", recentlyAdded: "Recently Added",
+                games: "Games", movies: "Movies",
+                schedule: "Airing Schedule", airingDay: "Airing Day", airingTime: "Airing Time", notAiring: "Not scheduled",
+                daySat: "Saturday", daySun: "Sunday", dayMon: "Monday", dayTue: "Tuesday", dayWed: "Wednesday", dayThu: "Thursday", dayFri: "Friday",
+                scheduleEmpty: "No airing days set for what you're watching yet. Edit an item to add one.", scheduleDesc: "Shows you're currently watching, grouped by the day new episodes air."
+            },
+            ar: {
+                appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
+                completed: "منتهية", planTo: "قائمة الانتظار", favorites: "المفضلة", rankings: "الأفضل 10",
+                achievements: "الإنجازات", timeline: "السجل الزمني", statistics: "الإحصائيات", settings: "الإعدادات",
+                addNew: "إضافة", addNewItem: "إضافة عنصر جديد", title: "العنوان *", category: "الفئة", status: "الحالة",
+                rating: "التقييم (من 1 إلى 10)", year: "سنة الإصدار", coverImage: "صورة الغلاف", notes: "ملاحظات",
+                addToFav: "أضِف إلى المفضلة", save: "حفظ", edit: "تعديل", delete: "حذف", dropped: "متروكة",
+                totalItems: "عدد العناصر", totalTime: "إجمالي وقت المشاهدة", favCount: "عدد المفضلة",
+                all: "الكل", anime: "أنمي", movie: "أفلام", series: "مسلسلات", game: "ألعاب", search: "ابحث...",
+                episodes: "إجمالي الحلقات", seasons: "عدد المواسم", duration: "المدة (بالدقائق)", platform: "المنصة", hoursPlayed: "ساعات اللعب",
+                language: "اللغة", theme: "المظهر", exportData: "تصدير نسخة احتياطية", importData: "استيراد نسخة احتياطية",
+                achievementUnlocked: "إنجاز جديد!", nothingHere: "لا توجد عناصر بعد، ابدأ بإضافة أول عنصر!",
+                rankDesc: "اسحب العناصر المكتملة وأفلتها لترتيب أفضل 10 لديك.", recentlyAdded: "أُضيف مؤخرًا",
+                games: "الألعاب", movies: "الأفلام",
+                schedule: "جدول العرض", airingDay: "يوم الحلقة", airingTime: "وقت الحلقة", notAiring: "غير محدد",
+                daySat: "السبت", daySun: "الأحد", dayMon: "الإثنين", dayTue: "الثلاثاء", dayWed: "الأربعاء", dayThu: "الخميس", dayFri: "الجمعة",
+                scheduleEmpty: "لا يوجد أي عنصر تشاهده الآن له يوم عرض محدد. عدّل عنصرًا لإضافة يوم العرض.", scheduleDesc: "العناصر التي تشاهدها حاليًا، مُرتّبة حسب يوم صدور الحلقة الجديدة."
+            }
+        };
+
+        const ACHIEVEMENTS_LIST = [
+            { id: "first_blood", icon: "🌱", title: { en: "First Memory", ar: "أول ذكرى" }, desc: { en: "Add your first item", ar: "أضف أول عنصر" }, condition: (s) => s.total > 0 },
+            { id: "movie_master", icon: "🎬", title: { en: "Movie Master", ar: "سيد الأفلام" }, desc: { en: "Complete 5 movies", ar: "أكمل 5 أفلام" }, condition: (s) => s.moviesCompleted >= 5 },
+            { id: "anime_legend", icon: "🍥", title: { en: "Anime Legend", ar: "أسطورة الأنمي" }, desc: { en: "Complete 5 anime", ar: "أكمل 5 أنمي" }, condition: (s) => s.animeCompleted >= 5 },
+            { id: "gamer", icon: "🎮", title: { en: "Gamer", ar: "لاعب" }, desc: { en: "Complete 5 games", ar: "أكمل 5 ألعاب" }, condition: (s) => s.gamesCompleted >= 5 },
+            { id: "chronicle_legend", icon: "👑", title: { en: "Chronicle Legend", ar: "أسطورة السجل" }, desc: { en: "10 completed items", ar: "10 عناصر مكتملة" }, condition: (s) => (s.moviesCompleted + s.animeCompleted + s.gamesCompleted + s.seriesCompleted) >= 10 }
+        ];
+
+        let state = {
+            data: [],
+            settings: { lang: 'en', theme: 'dark' },
+            unlockedAchievements: [],
+            top10: []
+        };
+        let currentView = 'dashboard';
+        let currentItem = null;
+
+        // --- GOOGLE DRIVE STORAGE CONFIG ---
+        // 1) Create an OAuth Client ID (type: Web application) in Google Cloud Console:
+        //    https://console.cloud.google.com/apis/credentials
+        // 2) Enable the "Google Drive API" for that project.
+        // 3) Add the exact URL where you will host this file (e.g. https://yourname.github.io)
+        //    to "Authorized JavaScript origins". http://localhost:PORT also works for testing.
+        // 4) Paste the Client ID below.
+        const GOOGLE_CLIENT_ID = "758332199660-euui3k1lqp6rtubopkpfouj0ccb515nr.apps.googleusercontent.com";
+        const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
+        const DRIVE_FILE_NAME = "chronicle_data.json";
+        const ACCOUNTS_KEY = "chronicle_accounts";
+        const LAST_EMAIL_KEY = "chronicle_last_email";
+
+        let accessToken = null;
+        let driveFileId = null;
+        let tokenClient = null;
+        let saveTimeout = null;
+        let currentAccount = null; // { email, name, picture }
+
+        // --- ACCOUNT STORAGE (browser-local list of previously used Google accounts) ---
+        function getStoredAccounts() {
+            try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY)) || []; }
+            catch (e) { return []; }
+        }
+        function saveStoredAccounts(list) {
+            localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(list));
+        }
+        function upsertAccount(account) {
+            const list = getStoredAccounts();
+            const idx = list.findIndex(a => a.email === account.email);
+            if (idx >= 0) list[idx] = account; else list.push(account);
+            saveStoredAccounts(list);
+        }
+        function removeStoredAccount(email) {
+            saveStoredAccounts(getStoredAccounts().filter(a => a.email !== email));
+            renderAccountPicker();
+        }
+
+        async function fetchUserProfile(token) {
+            const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('userinfo failed: ' + res.status);
+            const data = await res.json();
+            return { email: data.email, name: data.name || data.email, picture: data.picture || '' };
+        }
+
+        function renderAccountPicker() {
+            const wrap = document.getElementById('accountPicker');
+            const accounts = getStoredAccounts();
+            if (accounts.length === 0) { wrap.classList.add('hidden'); wrap.innerHTML = ''; return; }
+            wrap.classList.remove('hidden');
+            wrap.innerHTML = accounts.map(a => `
+                <button class="account-avatar-btn" onclick="signInAs('${a.email.replace(/'/g, "\\'")}')">
+                    ${a.picture
+                        ? `<img src="${a.picture}" referrerpolicy="no-referrer">`
+                        : `<div class="avatar-fallback">${(a.name || a.email || '?').charAt(0).toUpperCase()}</div>`}
+                    <span>${a.name || a.email}</span>
+                </button>
+            `).join('') + `
+                <button class="account-avatar-btn add-account" onclick="signIn()">
+                    <div class="avatar-fallback">+</div>
+                    <span id="addAccountLabel">Add account<br>حساب آخر</span>
+                </button>
+            `;
+        }
+
+        function renderSidebarAccountWidget() {
+            const el = document.getElementById('sidebarAccount');
+            if (!el || !currentAccount) return;
+            el.innerHTML = `
+                ${currentAccount.picture
+                    ? `<img src="${currentAccount.picture}" referrerpolicy="no-referrer">`
+                    : `<div class="avatar-fallback">${(currentAccount.name || currentAccount.email || '?').charAt(0).toUpperCase()}</div>`}
+                <div class="acc-info">
+                    <div class="acc-name">${currentAccount.name || ''}</div>
+                    <div class="acc-email">${currentAccount.email || ''}</div>
+                </div>
+            `;
+        }
+
+        function openAccountSwitcher() {
+            // Go back to the login screen to pick a different account, without deleting saved data
+            accessToken = null;
+            driveFileId = null;
+            currentAccount = null;
+            signInLock = false;
+            renderAccountPicker();
+            document.getElementById('appContainer').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('loginStatus').innerText = '';
+        }
+
+        let signInLock = false; // prevents two overlapping sign-in attempts from racing each other
+
+        function initGoogleAuth() {
+            if (typeof google === 'undefined' || !google.accounts) {
+                setTimeout(initGoogleAuth, 200); // GIS script may still be loading
+                return;
+            }
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: DRIVE_SCOPE,
+                callback: async (response) => {
+                    if (response.error) {
+                        signInLock = false;
+                        // A silent, automatic attempt failing quietly is expected - only show an error
+                        // message if the user explicitly asked to sign in.
+                        if (!autoAttemptInProgress) {
+                            document.getElementById('loginStatus').innerText =
+                                (document.documentElement.lang === 'ar' ? "فشل تسجيل الدخول: " : "Sign-in failed: ") + response.error;
+                        }
+                        autoAttemptInProgress = false;
+                        return;
+                    }
+                    // If the app is already signed in and loaded (e.g. a stray duplicate callback
+                    // arrived after a first successful one), ignore it instead of reloading and
+                    // racing with the data already on screen.
+                    if (accessToken && currentAccount) { autoAttemptInProgress = false; return; }
+                    autoAttemptInProgress = false;
+                    accessToken = response.access_token;
+                    document.getElementById('loginStatus').innerText =
+                        document.documentElement.lang === 'ar' ? "جارٍ تحميل بياناتك..." : "Loading your data...";
+                    try {
+                        currentAccount = await fetchUserProfile(accessToken);
+                        upsertAccount(currentAccount);
+                        localStorage.setItem(LAST_EMAIL_KEY, currentAccount.email);
+                    } catch (e) {
+                        console.error('Could not fetch profile', e);
+                    }
+                    await initApp();
+                    signInLock = false;
+                    renderSidebarAccountWidget();
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('appContainer').classList.remove('hidden');
+                }
+            });
+            renderAccountPicker();
+            attemptSilentSignIn();
+        }
+
+        let autoAttemptInProgress = false;
+        function attemptSilentSignIn() {
+            // Best-effort: try to sign the user back in automatically using the last used
+            // account, so they don't have to tap "Sign in" every time they open the site.
+            // This can silently fail (e.g. session expired, browser blocked it) - in that
+            // case the normal sign-in / account picker is shown instead.
+            const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
+            if (!lastEmail || GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE') || signInLock) return;
+            signInLock = true;
+            autoAttemptInProgress = true;
+            document.getElementById('loginStatus').innerText =
+                document.documentElement.lang === 'ar' ? "جارٍ محاولة تسجيل الدخول التلقائي..." : "Trying automatic sign-in...";
+            try {
+                tokenClient.requestAccessToken({ prompt: '', hint: lastEmail });
+            } catch (e) {
+                autoAttemptInProgress = false;
+                signInLock = false;
+            }
+            // Clear the "trying..." message after a moment if nothing happened (e.g. popup blocked)
+            setTimeout(() => {
+                if (autoAttemptInProgress) {
+                    autoAttemptInProgress = false;
+                    signInLock = false;
+                    document.getElementById('loginStatus').innerText = '';
+                }
+            }, 4000);
+        }
+
+        function signInAs(email) {
+            if (!tokenClient) { initGoogleAuth(); setTimeout(() => signInAs(email), 300); return; }
+            if (signInLock) return; // a sign-in is already in progress - ignore extra taps
+            signInLock = true;
+            tokenClient.requestAccessToken({ prompt: '', hint: email });
+        }
+
+        function signIn() {
+            if (GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE')) {
+                alert("Google Client ID is not configured yet. Open index.html and set GOOGLE_CLIENT_ID.\n\nلم يتم إعداد معرف Google بعد. افتح الملف وأضف GOOGLE_CLIENT_ID الخاص بك.");
+                return;
+            }
+            if (!tokenClient) { initGoogleAuth(); setTimeout(signIn, 300); return; }
+            if (signInLock) return; // a sign-in is already in progress - ignore extra taps
+            signInLock = true;
+            tokenClient.requestAccessToken({ prompt: 'select_account consent' });
+        }
+
+        function signOut() {
+            if (accessToken) {
+                google.accounts.oauth2.revoke(accessToken, () => {});
+            }
+            if (currentAccount) removeStoredAccount(currentAccount.email);
+            localStorage.removeItem(LAST_EMAIL_KEY);
+            accessToken = null;
+            driveFileId = null;
+            currentAccount = null;
+            location.reload();
+        }
+
+        // --- CORE FUNCTIONS ---
+
+        async function initApp() {
+            await loadState();
+            if (state.data.length === 0) populateInitialData();
+            applySettings();
+            renderSidebar();
+            renderSidebarAccountWidget();
+            navigate('dashboard');
+        }
+
+        async function findDriveFile() {
+            const q = `name = '${DRIVE_FILE_NAME}' and trashed = false`;
+            const params = new URLSearchParams({ spaces: 'appDataFolder', q: q, fields: 'files(id,name)' });
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            if (!res.ok) throw new Error('Drive list request failed: ' + res.status);
+            const data = await res.json();
+            return (data.files && data.files.length > 0) ? data.files[0].id : null;
+        }
+
+        async function loadState() {
+            try {
+                const fileId = await findDriveFile();
+                if (fileId) {
+                    driveFileId = fileId;
+                    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    if (!res.ok) throw new Error('Drive download failed: ' + res.status);
+                    const parsed = await res.json();
+                    state.data = parsed.data || [];
+                    state.settings = parsed.settings || { lang: 'en', theme: 'dark' };
+                    state.unlockedAchievements = parsed.unlockedAchievements || [];
+                    state.top10 = parsed.top10 || [];
+                    setSyncStatus(state.settings.lang === 'ar' ? '✓ تم تحميل بياناتك' : '✓ Data loaded', false);
+                } else {
+                    driveFileId = null; // First time for this account - a new file will be created on save
+                    setSyncStatus(state.settings.lang === 'ar' ? 'حساب جديد - سيتم إنشاء ملف' : 'New account - file will be created', false);
+                }
+            } catch (e) {
+                console.error("Error loading state from Drive", e);
+                setSyncStatus((state.settings.lang === 'ar' ? '⚠ فشل التحميل: ' : '⚠ Load failed: ') + e.message, true);
+                alert(state.settings.lang === 'en'
+                    ? "Could not load your data from Google Drive. Starting with an empty archive."
+                    : "تعذر تحميل بياناتك من Google Drive. سيتم البدء بسجل فارغ.");
+            }
+        }
+
+        async function manualLoadFromDrive() {
+            if (!accessToken) return;
+            setSyncStatus(state.settings.lang === 'ar' ? 'جارٍ البحث عن ملفك في Drive...' : 'Searching for your file on Drive...', false);
+            driveFileId = null; // force a fresh search instead of reusing a possibly-stale id
+            await loadState();
+            if (state.data.length === 0) populateInitialData();
+            applySettings();
+            renderSidebar();
+            navigate(currentView || 'dashboard');
+        }
+
+        function saveState() {
+            checkAchievements();
+            // Save right away (no long delay) so quick add-then-close on mobile isn't lost
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveStateToDrive, 150);
+        }
+
+        // Make sure a pending save is flushed if the user closes/minimizes the app quickly
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && accessToken) {
+                clearTimeout(saveTimeout);
+                saveStateToDrive();
+            }
+        });
+        window.addEventListener('pagehide', () => {
+            if (accessToken) {
+                clearTimeout(saveTimeout);
+                saveStateToDrive();
+            }
+        });
+
+        function setSyncStatus(text, isError) {
+            const el = document.getElementById('syncStatus');
+            if (el) { el.innerText = text; el.style.color = isError ? 'var(--danger)' : 'var(--text-muted)'; }
+            const el2 = document.getElementById('syncStatusSettings');
+            if (el2) { el2.innerText = text; el2.style.color = isError ? 'var(--danger)' : 'var(--text-muted)'; }
+        }
+
+        async function saveStateToDrive() {
+            if (!accessToken) return;
+            setSyncStatus(state.settings.lang === 'ar' ? 'جارٍ الحفظ...' : 'Saving...', false);
+            const content = JSON.stringify(state);
+            try {
+                let res;
+                if (driveFileId) {
+                    res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+                        method: 'PATCH',
+                        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                        body: content
+                    });
+                } else {
+                    const metadata = { name: DRIVE_FILE_NAME, parents: ['appDataFolder'] };
+                    const boundary = 'chronicle_boundary_314159265';
+                    const multipartBody =
+                        `--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+                        `--${boundary}\r\nContent-Type: application/json\r\n\r\n${content}\r\n--${boundary}--`;
+                    res = await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
+                        body: multipartBody
+                    });
+                }
+                if (!res.ok) {
+                    const errBody = await res.text().catch(() => '');
+                    throw new Error('HTTP ' + res.status + ' - ' + errBody.slice(0, 200));
+                }
+                const data = await res.json();
+                if (data.id) driveFileId = data.id;
+                setSyncStatus(state.settings.lang === 'ar' ? '✓ تم الحفظ في Google Drive' : '✓ Saved to Google Drive', false);
+            } catch (e) {
+                console.error("Error saving state to Drive", e);
+                setSyncStatus((state.settings.lang === 'ar' ? '⚠ فشل الحفظ: ' : '⚠ Save failed: ') + e.message, true);
+            }
+        }
+
+        function manualSaveToDrive() {
+            clearTimeout(saveTimeout);
+            saveStateToDrive();
+        }
+
+        function applySettings() {
+            document.documentElement.setAttribute('data-theme', state.settings.theme);
+            document.documentElement.lang = state.settings.lang;
+            document.documentElement.dir = state.settings.lang === 'ar' ? 'rtl' : 'ltr';
+            updateTranslations();
+            renderSidebar();
+        }
+
+        function t(key) { return TRANSLATIONS[state.settings.lang][key] || key; }
+
+        function updateTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (el.tagName === 'INPUT' && el.type === 'text') el.placeholder = t(key);
+                else el.innerText = t(key);
+            });
+            document.getElementById('headerTitle').innerText = t(currentView);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        function navigate(view) {
+            currentView = view;
+            document.getElementById('headerTitle').innerText = t(view);
+            if(window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const activeNav = document.getElementById(`nav-${view}`);
+            if(activeNav) activeNav.classList.add('active');
+
+            const container = document.getElementById('viewContainer');
+            container.innerHTML = ''; // clear
+
+            switch(view) {
+                case 'dashboard': renderDashboard(container); break;
+                case 'library': renderLibrary(container, 'all'); break;
+                case 'anime': renderLibrary(container, 'anime'); break;
+                case 'movie': renderLibrary(container, 'movie'); break;
+                case 'series': renderLibrary(container, 'series'); break;
+                case 'game': renderLibrary(container, 'game'); break;
+                case 'favorites': renderLibrary(container, 'all', (i) => i.favorite); break;
+                case 'watchingNow': renderLibrary(container, 'all', (i) => i.status === 'watching'); break;
+                case 'schedule': renderSchedule(container); break;
+                case 'completed': renderLibrary(container, 'all', (i) => i.status === 'completed'); break;
+                case 'planTo': renderLibrary(container, 'all', (i) => i.status === 'planto'); break;
+                case 'rankings': renderRankings(container); break;
+                case 'achievements': renderAchievements(container); break;
+                case 'timeline': renderTimeline(container); break;
+                case 'statistics': renderStatistics(container); break;
+                case 'settings': renderSettings(container); break;
+            }
+
+            // Retrigger the fade/rise entrance on every navigation (same element, forced reflow)
+            container.classList.remove('view-fade');
+            void container.offsetWidth;
+            container.classList.add('view-fade');
+
+            if (view === 'dashboard') animateDashboardCounters();
+        }
+
+        // --- RENDER FUNCTIONS ---
+
+        function renderSidebar() {
+            const menu = [
+                { id: 'dashboard', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+                { id: 'library', icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' },
+                { id: 'watchingNow', icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
+                { id: 'schedule', icon: 'M8 2v4 M16 2v4 M3 10h18 M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+                { id: 'completed', icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3' },
+                { id: 'planTo', icon: 'M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+                { id: 'favorites', icon: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' },
+                { sep: true },
+                { id: 'anime', icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' },
+                { id: 'movie', icon: 'M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2z M7 2v20 M17 2v20 M2 12h20 M2 7h5 M2 17h5 M17 7h5 M17 17h5' },
+                { id: 'series', icon: 'M2 7h20v10H2z M12 22V17 M8 22h8' },
+                { id: 'game', icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z M8 9h.01 M12 9h.01 M16 9h.01' },
+                { sep: true },
+                { id: 'rankings', icon: 'M12 20V10 M18 20V4 M6 20v-4' },
+                { id: 'achievements', icon: 'M8 21h8 M12 17v4 M7 4h10 M12 4v13a4 4 0 0 1-4-4v-1h-1a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1' },
+                { id: 'timeline', icon: 'M12 2v20 M12 6H5 M12 14H5 M12 10h7 M12 18h7' },
+                { id: 'statistics', icon: 'M18 20V10 M12 20V4 M6 20v-10' },
+                { id: 'settings', icon: 'M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' }
+            ];
+
+            const navMenu = document.getElementById('navMenu');
+            navMenu.innerHTML = menu.map(item => {
+                if(item.sep) return `<div style="height:1px; background:var(--border); margin: 0.5rem 1.5rem;"></div>`;
+                return `
+                    <div id="nav-${item.id}" class="nav-item ${currentView === item.id ? 'active' : ''}" onclick="navigate('${item.id}')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${item.icon}"/></svg>
+                        <span>${t(item.id)}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDashboard(container) {
+            const completed = state.data.filter(i => i.status === 'completed').length;
+            const watching = state.data.filter(i => i.status === 'watching').length;
+            const favs = state.data.filter(i => i.favorite).length;
+            
+            let timeStr = calculateTotalTime();
+
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="card stat-card"><div class="stat-value stat-number" id="statTotalItems" data-target="${state.data.length}">0</div><div data-i18n="totalItems">${t('totalItems')}</div></div>
+                    <div class="card stat-card"><div class="stat-value stat-number" id="statCompleted" data-target="${completed}">0</div><div data-i18n="completed">${t('completed')}</div></div>
+                    <div class="card stat-card"><div class="stat-value stat-number" id="statWatching" data-target="${watching}">0</div><div data-i18n="watchingNow">${t('watchingNow')}</div></div>
+                    <div class="card stat-card"><div class="stat-value" style="font-size:1.5rem; line-height:2.5rem">${timeStr}</div><div data-i18n="totalTime">${t('totalTime')}</div></div>
+                </div>
+                <h3 class="p-4" style="font-size:1.25rem; font-weight:bold">${t('recentlyAdded')}</h3>
+                <div class="media-grid">
+                    ${state.data.slice().reverse().slice(0, 12).map(generateMediaCard).join('')}
+                </div>
+            `;
+        }
+
+        function animateDashboardCounters() {
+            const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            document.querySelectorAll('.stat-number[data-target]').forEach(el => {
+                const target = parseInt(el.getAttribute('data-target'), 10) || 0;
+                if (reduceMotion || target === 0) { el.innerText = target; return; }
+                const duration = 700;
+                const start = performance.now();
+                function tick(now) {
+                    const progress = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+                    el.innerText = Math.round(eased * target);
+                    if (progress < 1) requestAnimationFrame(tick);
+                }
+                requestAnimationFrame(tick);
+            });
+        }
+
+        function calculateTotalTime() {
+            let totalMins = 0;
+            state.data.forEach(item => {
+                if(item.status !== 'completed' && item.status !== 'watching') return;
+                if(item.category === 'anime' || item.category === 'series') {
+                    totalMins += (parseInt(item.episodes) || 0) * (parseInt(item.duration) || 0);
+                } else if(item.category === 'movie') {
+                    totalMins += (parseInt(item.duration) || 120);
+                } else if(item.category === 'game') {
+                    totalMins += (parseInt(item.hoursPlayed) || 0) * 60;
+                }
+            });
+            if(totalMins < 60) return `${totalMins}m`;
+            if(totalMins < 1440) return `${Math.floor(totalMins/60)}h ${totalMins%60}m`;
+            return `${Math.floor(totalMins/1440)}d ${Math.floor((totalMins%1440)/60)}h`;
+        }
+
+        function renderLibrary(container, filterCat = 'all', customFilter = null) {
+            let filtered = state.data;
+            if(filterCat !== 'all') filtered = filtered.filter(i => i.category === filterCat);
+            if(customFilter) filtered = filtered.filter(customFilter);
+
+            container.innerHTML = `
+                <input type="text" id="searchInput" class="input" placeholder="${t('search')}" onkeyup="filterLibrary()">
+                <div class="media-grid" id="libraryGrid">
+                    ${filtered.length ? filtered.map(generateMediaCard).join('') : `<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--text-muted)">${t('nothingHere')}</div>`}
+                </div>
+            `;
+        }
+
+        function filterLibrary() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.media-card');
+            cards.forEach(card => {
+                const title = card.getAttribute('data-title').toLowerCase();
+                card.style.display = title.includes(query) ? 'flex' : 'none';
+            });
+        }
+
+        function generateMediaCard(item) {
+            const coverSrc = item.cover || `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='150' fill='${encodeURIComponent('var(--surface-hover)')}'><rect width='100%' height='100%'/></svg>`;
+            const badgeColor = item.status === 'completed' ? 'var(--success)' : (item.status === 'watching' ? 'var(--primary)' : 'var(--warning)');
+            return `
+                <div class="media-card" data-title="${item.title}" onclick="openDetails('${item.id}')">
+                    <img src="${coverSrc}" class="media-cover" alt="${item.title}">
+                    <span class="badge" style="background:${badgeColor}">${t(item.status)}</span>
+                    <div class="media-info">
+                        <div class="media-title">${item.title}</div>
+                        <div class="media-meta">${t(item.category)} • ${item.year || '-'}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSchedule(container) {
+            const days = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'];
+            const watching = state.data.filter(i => i.status === 'watching' && (i.category === 'anime' || i.category === 'series'));
+            const grouped = {};
+            days.forEach(d => grouped[d] = []);
+            const unscheduled = [];
+            watching.forEach(i => {
+                if (i.airingDay && grouped[i.airingDay]) grouped[i.airingDay].push(i);
+                else unscheduled.push(i);
+            });
+
+            const hasAny = days.some(d => grouped[d].length > 0);
+
+            container.innerHTML = `
+                <p style="color:var(--text-muted); margin-bottom:1rem;">${t('scheduleDesc')}</p>
+                ${!hasAny ? `<div style="text-align:center; padding:2rem; color:var(--text-muted)">${t('scheduleEmpty')}</div>` : ''}
+                <div class="flex-col gap-4">
+                    ${days.map(d => grouped[d].length ? `
+                        <div>
+                            <h4 style="color:var(--primary); margin-bottom:0.75rem;">${t('day' + d.charAt(0).toUpperCase() + d.slice(1))}</h4>
+                            <div class="media-grid">
+                                ${grouped[d].map(i => generateScheduleCard(i)).join('')}
+                            </div>
+                        </div>
+                    ` : '').join('')}
+                    ${unscheduled.length ? `
+                        <div>
+                            <h4 style="color:var(--text-muted); margin-bottom:0.75rem;">${t('notAiring')}</h4>
+                            <div class="media-grid">
+                                ${unscheduled.map(i => generateScheduleCard(i)).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function generateScheduleCard(item) {
+            const coverSrc = item.cover || `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='150' fill='${encodeURIComponent('var(--surface-hover)')}'><rect width='100%' height='100%'/></svg>`;
+            return `
+                <div class="media-card" data-title="${item.title}" onclick="openDetails('${item.id}')">
+                    <img src="${coverSrc}" class="media-cover" alt="${item.title}">
+                    ${item.airingTime ? `<span class="badge" style="background:var(--primary)">${item.airingTime}</span>` : ''}
+                    <div class="media-info">
+                        <div class="media-title">${item.title}</div>
+                        <div class="media-meta">${t(item.category)} • ${item.episodes ? item.episodes + ' ' + t('episodes') : ''}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRankings(container) {
+            // Simplified drag and drop ranking for Top 10 completed items
+            const completed = state.data.filter(i => i.status === 'completed');
+            if(state.top10.length === 0 && completed.length > 0) {
+                state.top10 = completed.slice(0, 10).map(i => i.id);
+            }
+            
+            // Clean up deleted items from top10
+            state.top10 = state.top10.filter(id => state.data.find(i => i.id === id));
+
+            let html = `<p class="p-4 text-center text-muted" style="color:var(--text-muted)">${t('rankDesc')}</p><div class="rank-list" id="rankList">`;
+            state.top10.forEach((id, index) => {
+                const item = state.data.find(i => i.id === id);
+                if(!item) return;
+                html += `
+                    <div class="rank-item" draggable="true" ondragstart="dragStart(event, ${index})" ondragover="dragOver(event)" ondrop="drop(event, ${index})">
+                        <div class="rank-number">${index + 1}</div>
+                        <div class="media-title" style="flex:1">${item.title}</div>
+                        <div class="badge" style="position:static; display:block">${t(item.category)}</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        let dragIndex = null;
+        function dragStart(e, index) { dragIndex = index; }
+        function dragOver(e) { e.preventDefault(); }
+        function drop(e, index) {
+            e.preventDefault();
+            if(dragIndex === null || dragIndex === index) return;
+            const draggedId = state.top10.splice(dragIndex, 1)[0];
+            state.top10.splice(index, 0, draggedId);
+            saveState();
+            renderRankings(document.getElementById('viewContainer'));
+        }
+
+        function renderAchievements(container) {
+            container.innerHTML = `<div class="grid grid-cols-2 gap-4" style="max-width:800px; margin: 0 auto;">` +
+                ACHIEVEMENTS_LIST.map(ach => {
+                    const unlocked = state.unlockedAchievements.includes(ach.id);
+                    return `
+                        <div class="achievement-card ${unlocked ? 'unlocked' : ''}">
+                            <div class="ach-icon">${ach.icon}</div>
+                            <div>
+                                <div style="font-weight:bold">${ach.title[state.settings.lang]}</div>
+                                <div style="font-size:0.85rem; color:var(--text-muted)">${ach.desc[state.settings.lang]}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('') + `</div>`;
+        }
+
+        function renderTimeline(container) {
+            const sorted = [...state.data].sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+            container.innerHTML = `<div style="max-width:600px; margin: 0 auto;">` +
+                sorted.map(item => `
+                    <div class="timeline-item">
+                        <div class="timeline-date">${item.dateAdded.split('T')[0]}</div>
+                        <div class="timeline-content">
+                            <strong style="color:var(--primary)">Added:</strong> ${item.title} 
+                            <span class="badge" style="position:static; padding: 2px 6px; font-size:10px; margin-left:8px;">${t(item.category)}</span>
+                        </div>
+                    </div>
+                `).join('') + `</div>`;
+        }
+
+        function renderStatistics(container) {
+            const s = getStats();
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="card stat-card"><div class="stat-value">${s.total}</div><div>${t('totalItems')}</div></div>
+                    <div class="card stat-card"><div class="stat-value" style="color:var(--success)">${s.moviesCompleted + s.animeCompleted + s.gamesCompleted + s.seriesCompleted}</div><div>${t('completed')}</div></div>
+                </div>
+                <div class="card" style="max-width:600px; margin: 0 auto; padding: 2rem;">
+                    <h3 style="margin-bottom:1rem; text-align:center">Category Breakdown</h3>
+                    <div class="flex justify-between" style="margin-bottom:0.5rem"><span>${t('anime')}</span> <strong>${s.cat.anime}</strong></div>
+                    <div class="flex justify-between" style="margin-bottom:0.5rem"><span>${t('movie')}</span> <strong>${s.cat.movie}</strong></div>
+                    <div class="flex justify-between" style="margin-bottom:0.5rem"><span>${t('series')}</span> <strong>${s.cat.series}</strong></div>
+                    <div class="flex justify-between" style="margin-bottom:0.5rem"><span>${t('game')}</span> <strong>${s.cat.game}</strong></div>
+                </div>
+            `;
+        }
+
+        function renderSettings(container) {
+            container.innerHTML = `
+                <div class="card" style="max-width:600px; margin: 0 auto;">
+                    <div class="flex-col gap-4">
+                        <label data-i18n="language">${t('language')}</label>
+                        <select class="input" id="langSelect" onchange="changeSetting('lang', this.value)">
+                            <option value="en" ${state.settings.lang === 'en' ? 'selected' : ''}>English</option>
+                            <option value="ar" ${state.settings.lang === 'ar' ? 'selected' : ''}>العربية</option>
+                        </select>
+
+                        <label data-i18n="theme">${t('theme')}</label>
+                        <select class="input" id="themeSelect" onchange="changeSetting('theme', this.value)">
+                            <option value="dark" ${state.settings.theme === 'dark' ? 'selected' : ''}>Dark (Default)</option>
+                            <option value="light" ${state.settings.theme === 'light' ? 'selected' : ''}>Light</option>
+                            <option value="cyberpunk" ${state.settings.theme === 'cyberpunk' ? 'selected' : ''}>Cyberpunk</option>
+                            <option value="ocean" ${state.settings.theme === 'ocean' ? 'selected' : ''}>Ocean</option>
+                            <option value="forest" ${state.settings.theme === 'forest' ? 'selected' : ''}>Forest</option>
+                            <option value="purple-galaxy" ${state.settings.theme === 'purple-galaxy' ? 'selected' : ''}>Purple Galaxy</option>
+                            <option value="amoled" ${state.settings.theme === 'amoled' ? 'selected' : ''}>AMOLED Black</option>
+                            <option value="sunset" ${state.settings.theme === 'sunset' ? 'selected' : ''}>Sunset</option>
+                            <option value="mint" ${state.settings.theme === 'mint' ? 'selected' : ''}>Mint</option>
+                            <option value="rose" ${state.settings.theme === 'rose' ? 'selected' : ''}>Rose</option>
+                            <option value="slate" ${state.settings.theme === 'slate' ? 'selected' : ''}>Slate</option>
+                        </select>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+                        
+                        <div class="flex gap-4">
+                            <button class="btn btn-primary" style="flex:1" onclick="exportData()" data-i18n="exportData">${t('exportData')}</button>
+                            <label class="btn btn-surface" style="flex:1; cursor:pointer; display:flex; justify-content:center; margin:0">
+                                <span data-i18n="importData">${t('importData')}</span>
+                                <input type="file" style="display:none" accept=".json" onchange="importData(event)">
+                            </label>
+                        </div>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+                        <p style="color:var(--text-muted); font-size:0.85rem;">
+                            ${state.settings.lang === 'ar' ? 'بياناتك محفوظة في Google Drive الخاص بحسابك.' : 'Your data is stored in your Google Drive account.'}
+                        </p>
+                        <button class="btn btn-primary" onclick="manualSaveToDrive()">
+                            ${state.settings.lang === 'ar' ? 'حفظ الآن في Google Drive' : 'Save now to Google Drive'}
+                        </button>
+                        <button class="btn btn-surface" onclick="manualLoadFromDrive()">
+                            ${state.settings.lang === 'ar' ? 'البحث عن ملفي وتحميله من Drive' : 'Search & load my file from Drive'}
+                        </button>
+                        <div id="syncStatusSettings" style="font-size:0.85rem; color:var(--text-muted); min-height:1.2rem;"></div>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+                        <label>${state.settings.lang === 'ar' ? 'الحسابات المحفوظة على هذا الجهاز' : 'Accounts saved on this device'}</label>
+                        <div class="flex-col gap-2">
+                            ${getStoredAccounts().map(a => `
+                                <div class="flex items-center gap-2" style="padding:0.5rem; background:var(--bg); border-radius:var(--radius);">
+                                    ${a.picture
+                                        ? `<img src="${a.picture}" referrerpolicy="no-referrer" style="width:28px;height:28px;border-radius:50%;">`
+                                        : `<div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:bold;">${(a.name||a.email||'?').charAt(0).toUpperCase()}</div>`}
+                                    <div style="flex:1; font-size:0.85rem;">${a.name || a.email}${a.email === currentAccount?.email ? (state.settings.lang === 'ar' ? ' (الحالي)' : ' (current)') : ''}</div>
+                                    ${a.email !== currentAccount?.email ? `<button class="btn btn-surface" style="padding:0.25rem 0.6rem; font-size:0.8rem;" onclick="removeStoredAccount('${a.email.replace(/'/g, "\\'")}'); navigate('settings')">${state.settings.lang === 'ar' ? 'إزالة' : 'Remove'}</button>` : ''}
+                                </div>
+                            `).join('') || `<p style="color:var(--text-muted); font-size:0.85rem;">${state.settings.lang === 'ar' ? 'لا توجد حسابات محفوظة أخرى.' : 'No other saved accounts.'}</p>`}
+                            <button class="btn btn-surface" onclick="openAccountSwitcher()">
+                                ${state.settings.lang === 'ar' ? 'تبديل الحساب' : 'Switch account'}
+                            </button>
+                        </div>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+                        <button class="btn btn-surface" style="border-color:var(--danger); color:var(--danger)" onclick="signOut()">
+                            ${state.settings.lang === 'ar' ? 'تسجيل الخروج وحذف هذا الحساب من الجهاز' : 'Sign out and remove this account from device'}
+                        </button>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+                        <div class="site-credit" style="justify-content:center;">Chronicle <span class="heart">♥</span> by Zayd Chkouri</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function changeSetting(key, val) {
+            state.settings[key] = val;
+            saveState();
+            applySettings();
+            navigate('settings'); // re-render to update translations
+        }
+
+        // --- FORMS & MODALS ---
+
+        function openAddModal() {
+            document.getElementById('addForm').reset();
+            document.getElementById('itemId').value = '';
+            document.getElementById('modalTitle').innerText = t('addNewItem');
+            toggleCategoryFields();
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function toggleCategoryFields() {
+            const cat = document.getElementById('itemCategory').value;
+            const container = document.getElementById('dynamicFields');
+            container.innerHTML = '';
+
+            if (cat === 'anime' || cat === 'series') {
+                container.innerHTML = `
+                    <div><label>${t('seasons')}</label><input type="number" id="itemSeasons" class="input" min="1" value="1"></div>
+                    <div><label>${t('episodes')}</label><input type="number" id="itemEpisodes" class="input" min="1"></div>
+                    <div><label>${t('duration')}</label><input type="number" id="itemDuration" class="input" placeholder="e.g. 24"></div>
+                    <div>
+                        <label>${t('airingDay')}</label>
+                        <select id="itemAiringDay" class="input">
+                            <option value="">${t('notAiring')}</option>
+                            <option value="sat">${t('daySat')}</option>
+                            <option value="sun">${t('daySun')}</option>
+                            <option value="mon">${t('dayMon')}</option>
+                            <option value="tue">${t('dayTue')}</option>
+                            <option value="wed">${t('dayWed')}</option>
+                            <option value="thu">${t('dayThu')}</option>
+                            <option value="fri">${t('dayFri')}</option>
+                        </select>
+                    </div>
+                    <div><label>${t('airingTime')}</label><input type="text" id="itemAiringTime" class="input" placeholder="20:00"></div>
+                `;
+            } else if (cat === 'game') {
+                container.innerHTML = `
+                    <div><label>${t('platform')}</label><input type="text" id="itemPlatform" class="input" placeholder="PC, PS4..."></div>
+                    <div><label>${t('hoursPlayed')}</label><input type="number" id="itemHours" class="input"></div>
+                `;
+            } else if (cat === 'movie') {
+                container.innerHTML = `
+                    <div style="grid-column:1/-1"><label>${t('duration')}</label><input type="number" id="itemDuration" class="input" placeholder="120"></div>
+                `;
+            }
+        }
+
+        document.getElementById('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('itemId').value || Date.now().toString();
+            const cat = document.getElementById('itemCategory').value;
+            
+            let coverData = '';
+            const fileInput = document.getElementById('itemCover');
+            if (fileInput.files && fileInput.files[0]) {
+                coverData = await compressImage(fileInput.files[0], 400); // 400px width limit to save space
+            } else if (document.getElementById('itemId').value) {
+                // Keep existing image on edit if no new one
+                coverData = state.data.find(i => i.id === id).cover;
+            }
+
+            const item = {
+                id: id,
+                title: document.getElementById('itemTitle').value,
+                category: cat,
+                status: document.getElementById('itemStatus').value,
+                rating: document.getElementById('itemRating').value,
+                year: document.getElementById('itemYear').value,
+                notes: document.getElementById('itemNotes').value,
+                favorite: document.getElementById('itemFavorite').checked,
+                cover: coverData,
+                dateAdded: state.data.find(i => i.id === id)?.dateAdded || new Date().toISOString()
+            };
+
+            if (cat === 'anime' || cat === 'series') {
+                item.seasons = document.getElementById('itemSeasons')?.value;
+                item.episodes = document.getElementById('itemEpisodes')?.value;
+                item.duration = document.getElementById('itemDuration')?.value;
+                item.airingDay = document.getElementById('itemAiringDay')?.value || '';
+                item.airingTime = document.getElementById('itemAiringTime')?.value || '';
+            } else if (cat === 'game') {
+                item.platform = document.getElementById('itemPlatform')?.value;
+                item.hoursPlayed = document.getElementById('itemHours')?.value;
+            } else if (cat === 'movie') {
+                item.duration = document.getElementById('itemDuration')?.value;
+            }
+
+            const existingIndex = state.data.findIndex(i => i.id === id);
+            if(existingIndex >= 0) state.data[existingIndex] = item;
+            else state.data.push(item);
+
+            saveState();
+            closeModal('addModal');
+            navigate(currentView);
+        });
+
+        // Image compression helper to avoid localStorage limits
+        function compressImage(file, maxSize) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height;
+                        if(w > h && w > maxSize) { h *= maxSize/w; w = maxSize; }
+                        else if(h > maxSize) { w *= maxSize/h; h = maxSize; }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6)); // 60% quality jpeg
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function openDetails(id) {
+            currentItem = state.data.find(i => i.id === id);
+            if(!currentItem) return;
+
+            document.getElementById('detTitle').innerText = currentItem.title;
+            document.getElementById('detCategory').innerText = t(currentItem.category);
+            document.getElementById('detStatus').innerText = "• " + t(currentItem.status);
+            document.getElementById('detCover').src = currentItem.cover || '';
+            document.getElementById('detCover').style.display = currentItem.cover ? 'block' : 'none';
+            document.getElementById('detScore').innerText = currentItem.rating ? `${currentItem.rating}/10` : '';
+            document.getElementById('detNotes').innerText = currentItem.notes || '-';
+            
+            let statsText = currentItem.year ? `${currentItem.year} ` : '';
+            if(currentItem.category === 'anime' || currentItem.category === 'series') {
+                if(currentItem.seasons) statsText += `| S${currentItem.seasons} `;
+                if(currentItem.episodes) statsText += `| ${currentItem.episodes} eps `;
+            } else if(currentItem.category === 'game') {
+                if(currentItem.platform) statsText += `| ${currentItem.platform} `;
+                if(currentItem.hoursPlayed) statsText += `| ${currentItem.hoursPlayed}h `;
+            }
+            document.getElementById('detStats').innerText = statsText;
+
+            document.getElementById('detailsModal').classList.add('active');
+        }
+
+        function editCurrentItem() {
+            closeModal('detailsModal');
+            document.getElementById('itemId').value = currentItem.id;
+            document.getElementById('itemTitle').value = currentItem.title;
+            document.getElementById('itemCategory').value = currentItem.category;
+            document.getElementById('itemStatus').value = currentItem.status;
+            document.getElementById('itemRating').value = currentItem.rating || '';
+            document.getElementById('itemYear').value = currentItem.year || '';
+            document.getElementById('itemNotes').value = currentItem.notes || '';
+            document.getElementById('itemFavorite').checked = currentItem.favorite;
+            
+            toggleCategoryFields();
+            
+            setTimeout(() => {
+                if (currentItem.category === 'anime' || currentItem.category === 'series') {
+                    if(document.getElementById('itemSeasons')) document.getElementById('itemSeasons').value = currentItem.seasons || 1;
+                    if(document.getElementById('itemEpisodes')) document.getElementById('itemEpisodes').value = currentItem.episodes || '';
+                    if(document.getElementById('itemDuration')) document.getElementById('itemDuration').value = currentItem.duration || '';
+                    if(document.getElementById('itemAiringDay')) document.getElementById('itemAiringDay').value = currentItem.airingDay || '';
+                    if(document.getElementById('itemAiringTime')) document.getElementById('itemAiringTime').value = currentItem.airingTime || '';
+                } else if (currentItem.category === 'game') {
+                    if(document.getElementById('itemPlatform')) document.getElementById('itemPlatform').value = currentItem.platform || '';
+                    if(document.getElementById('itemHours')) document.getElementById('itemHours').value = currentItem.hoursPlayed || '';
+                }
+            }, 50);
+
+            document.getElementById('modalTitle').innerText = t('edit');
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function deleteCurrentItem() {
+            if(confirm(state.settings.lang === 'en' ? "Are you sure?" : "هل أنت متأكد؟")) {
+                state.data = state.data.filter(i => i.id !== currentItem.id);
+                state.top10 = state.top10.filter(id => id !== currentItem.id);
+                saveState();
+                closeModal('detailsModal');
+                navigate(currentView);
+            }
+        }
+
+        // --- ACHIEVEMENTS ENGINE ---
+        
+        function getStats() {
+            return {
+                total: state.data.length,
+                moviesCompleted: state.data.filter(i => i.category === 'movie' && i.status === 'completed').length,
+                animeCompleted: state.data.filter(i => i.category === 'anime' && i.status === 'completed').length,
+                gamesCompleted: state.data.filter(i => i.category === 'game' && i.status === 'completed').length,
+                seriesCompleted: state.data.filter(i => i.category === 'series' && i.status === 'completed').length,
+                cat: {
+                    anime: state.data.filter(i=>i.category==='anime').length,
+                    movie: state.data.filter(i=>i.category==='movie').length,
+                    series: state.data.filter(i=>i.category==='series').length,
+                    game: state.data.filter(i=>i.category==='game').length
+                }
+            };
+        }
+
+        function checkAchievements() {
+            const s = getStats();
+            ACHIEVEMENTS_LIST.forEach(ach => {
+                if(!state.unlockedAchievements.includes(ach.id) && ach.condition(s)) {
+                    state.unlockedAchievements.push(ach.id);
+                    showToast(ach.title[state.settings.lang]);
+                    saveState();
+                }
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        // --- BACKUP SYSTEM ---
+        function exportData() {
+            const dataStr = JSON.stringify(state);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = 'chronicle_backup.json';
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if(parsed.data) {
+                        state = parsed;
+                        saveState();
+                        alert(state.settings.lang === 'ar' ? "تمت استعادة النسخة الاحتياطية بنجاح!" : "Backup restored successfully!");
+                        applySettings();
+                        renderSidebar();
+                        navigate(currentView);
+                    }
+                } catch (err) {
+                    alert(state.settings.lang === 'ar' ? "ملف النسخة الاحتياطية غير صالح." : "Invalid backup file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- INITIAL DATA GENERATION ---
+        function populateInitialData() {
+            const games = [ "GTA V", "Red Dead Redemption GOTY", "Blur", "Call of Duty Black Ops", "Black Ops II", "Modern Warfare 3", "Dragon Ball Xenoverse", "Dragon Ball Z Ultimate Tenkaichi", "Naruto Storm series", "Minecraft PS3", "Attack on Titan Wings of Freedom", "Budokai Tenkaichi", "Budokai 3", "Downhill Domination", "Metal Slug Anthology", "Rise to Honor", "PES 2014" ];
+            const movies = [ "Spider-Man", "Zootopia", "Cars", "Kung Fu Panda", "Ice Age", "Wall-E", "Up", "Coco", "Ratatouille", "Minions", "Despicable Me", "Soul", "Inside Out", "Klaus", "Interstellar", "Oppenheimer", "Sonic", "Home Alone", "Johnny English" ];
+            const anime = [ "Attack on Titan", "Black Clover", "Death Note", "Blue Lock", "Dragon Ball Z", "Dragon Ball Kai", "Dragon Ball Super", "Demon Slayer", "Jujutsu Kaisen", "Fire Force", "Chainsaw Man", "Mashle", "Kaiju No.8" ];
+            const series = [ "Loki", "WandaVision", "What If", "Marvel Zombies", "I Am Groot", "Peaky Blinders", "Squid Game", "Wednesday", "Mr Robot", "Breaking Bad", "Better Call Saul" ];
+
+            let idCounter = 1;
+            const addItems = (arr, category) => {
+                arr.forEach(title => {
+                    state.data.push({
+                        id: (idCounter++).toString(),
+                        title: title,
+                        category: category,
+                        status: 'completed', // default set to completed for populated data to see stats
+                        rating: Math.floor(Math.random() * 4) + 7, // Random 7-10 rating
+                        favorite: Math.random() > 0.8,
+                        dateAdded: new Date(Date.now() - Math.floor(Math.random()*10000000000)).toISOString()
+                    });
+                });
+            };
+
+            addItems(games, 'game');
+            addItems(movies, 'movie');
+            addItems(anime, 'anime');
+            addItems(series, 'series');
+            saveState();
+        }
+
+        // Boot
+        document.addEventListener('DOMContentLoaded', initGoogleAuth);
+
+    </script>
+</body>
+</html>
