@@ -497,6 +497,50 @@
         let tokenClient = null;
         let saveTimeout = null;
         let currentAccount = null; // { email, name, picture }
+        let appAlreadyRendered = false; // true once the app UI is showing (from cache or after sign-in)
+        let lastSyncedAt = 0; // timestamp of the last successful two-way sync with Drive
+
+        // --- LOCAL OFFLINE STORAGE (IndexedDB) ---
+        // This is what actually lets the app work offline like a normal installed app:
+        // every save writes here immediately (instant, no network needed). Google Drive
+        // is only used to sync/back up that local copy whenever you're online.
+        const IDB_NAME = 'chronicle-db';
+        const IDB_STORE = 'state';
+        function idbOpen() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(IDB_NAME, 1);
+                req.onupgradeneeded = () => { req.result.createObjectStore(IDB_STORE); };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+        async function idbGet(email) {
+            const db = await idbOpen();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readonly');
+                const req = tx.objectStore(IDB_STORE).get(email);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => reject(req.error);
+            });
+        }
+        async function idbSet(email, record) {
+            const db = await idbOpen();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).put(record, email);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+        async function idbDelete(email) {
+            const db = await idbOpen();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).delete(email);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
 
         // --- ACCOUNT STORAGE (browser-local list of previously used Google accounts) ---
         function getStoredAccounts() {
@@ -566,6 +610,7 @@
             driveFileId = null;
             currentAccount = null;
             signInLock = false;
+            appAlreadyRendered = false;
             renderAccountPicker();
             document.getElementById('appContainer').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
@@ -588,20 +633,15 @@
                         // A silent, automatic attempt failing quietly is expected - only show an error
                         // message if the user explicitly asked to sign in.
                         if (!autoAttemptInProgress) {
-                            document.getElementById('loginStatus').innerText =
-                                (document.documentElement.lang === 'ar' ? "فشل تسجيل الدخول: " : "Sign-in failed: ") + response.error;
+                            const msg = (document.documentElement.lang === 'ar' ? "فشل تسجيل الدخول: " : "Sign-in failed: ") + response.error;
+                            if (appAlreadyRendered) setSyncStatus('⚠ ' + msg, true);
+                            else document.getElementById('loginStatus').innerText = msg;
                         }
                         autoAttemptInProgress = false;
                         return;
                     }
-                    // If the app is already signed in and loaded (e.g. a stray duplicate callback
-                    // arrived after a first successful one), ignore it instead of reloading and
-                    // racing with the data already on screen.
-                    if (accessToken && currentAccount) { autoAttemptInProgress = false; return; }
                     autoAttemptInProgress = false;
                     accessToken = response.access_token;
-                    document.getElementById('loginStatus').innerText =
-                        document.documentElement.lang === 'ar' ? "جارٍ تحميل بياناتك..." : "Loading your data...";
                     try {
                         currentAccount = await fetchUserProfile(accessToken);
                         upsertAccount(currentAccount);
@@ -609,7 +649,18 @@
                     } catch (e) {
                         console.error('Could not fetch profile', e);
                     }
+                    if (appAlreadyRendered) {
+                        // The app is already showing (loaded instantly from the local offline
+                        // cache) - just reconcile quietly with Drive in the background, no reload.
+                        renderSidebarAccountWidget();
+                        signInLock = false;
+                        await backgroundSync();
+                        return;
+                    }
+                    document.getElementById('loginStatus').innerText =
+                        document.documentElement.lang === 'ar' ? "جارٍ تحميل بياناتك..." : "Loading your data...";
                     await initApp();
+                    appAlreadyRendered = true;
                     signInLock = false;
                     renderSidebarAccountWidget();
                     document.getElementById('loginScreen').classList.add('hidden');
@@ -617,21 +668,23 @@
                 }
             });
             renderAccountPicker();
-            attemptSilentSignIn();
+            if (navigator.onLine) attemptSilentSignIn();
         }
 
         let autoAttemptInProgress = false;
         function attemptSilentSignIn() {
             // Best-effort: try to sign the user back in automatically using the last used
             // account, so they don't have to tap "Sign in" every time they open the site.
-            // This can silently fail (e.g. session expired, browser blocked it) - in that
-            // case the normal sign-in / account picker is shown instead.
+            // This can silently fail (e.g. session expired, browser blocked it, offline) - in
+            // that case the app just keeps working from its local offline copy.
             const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
-            if (!lastEmail || GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE') || signInLock) return;
+            if (!lastEmail || GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE') || signInLock || !navigator.onLine) return;
             signInLock = true;
             autoAttemptInProgress = true;
-            document.getElementById('loginStatus').innerText =
-                document.documentElement.lang === 'ar' ? "جارٍ محاولة تسجيل الدخول التلقائي..." : "Trying automatic sign-in...";
+            if (!appAlreadyRendered) {
+                document.getElementById('loginStatus').innerText =
+                    document.documentElement.lang === 'ar' ? "جارٍ محاولة تسجيل الدخول التلقائي..." : "Trying automatic sign-in...";
+            }
             try {
                 tokenClient.requestAccessToken({ prompt: '', hint: lastEmail });
             } catch (e) {
@@ -643,7 +696,7 @@
                 if (autoAttemptInProgress) {
                     autoAttemptInProgress = false;
                     signInLock = false;
-                    document.getElementById('loginStatus').innerText = '';
+                    if (!appAlreadyRendered) document.getElementById('loginStatus').innerText = '';
                 }
             }, 4000);
         }
@@ -670,23 +723,62 @@
             if (accessToken) {
                 google.accounts.oauth2.revoke(accessToken, () => {});
             }
-            if (currentAccount) removeStoredAccount(currentAccount.email);
+            if (currentAccount) {
+                removeStoredAccount(currentAccount.email);
+                idbDelete(currentAccount.email).catch(() => {});
+            }
             localStorage.removeItem(LAST_EMAIL_KEY);
             accessToken = null;
             driveFileId = null;
             currentAccount = null;
+            appAlreadyRendered = false;
             location.reload();
         }
 
         // --- CORE FUNCTIONS ---
 
         async function initApp() {
-            await loadState();
+            let loadedLocally = false;
+            if (currentAccount) {
+                try {
+                    const record = await idbGet(currentAccount.email);
+                    if (record && record.state) {
+                        state = record.state;
+                        lastSyncedAt = record.lastSyncedAt || 0;
+                        loadedLocally = true;
+                    }
+                } catch (e) { console.error('IndexedDB read failed', e); }
+            }
+            if (!loadedLocally && accessToken && navigator.onLine) {
+                // No local copy yet for this account on this device - pull whatever is on Drive
+                try { await pullFromDriveIfNewer(); } catch (e) { console.error(e); }
+            }
             if (state.data.length === 0) populateInitialData();
             applySettings();
             renderSidebar();
             renderSidebarAccountWidget();
             navigate('dashboard');
+            if (loadedLocally) {
+                if (accessToken && navigator.onLine) backgroundSync();
+                else setSyncStatus(navigator.onLine
+                    ? ''
+                    : (state.settings.lang === 'ar' ? '📴 غير متصل - العمل محليًا' : '📴 Offline - working locally'), false);
+            }
+        }
+
+        // Boot the app straight from its local offline copy (if any) before even touching the
+        // network - this is what lets it open instantly and work like a normal installed app.
+        async function boot() {
+            const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
+            if (lastEmail) {
+                const stored = getStoredAccounts().find(a => a.email === lastEmail);
+                if (stored) currentAccount = stored;
+                await initApp(); // loads from IndexedDB instantly if this account has been used before
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('appContainer').classList.remove('hidden');
+                appAlreadyRendered = true;
+            }
+            initGoogleAuth(); // sets up sign-in; will quietly refresh/sync in the background if online
         }
 
         async function findDriveFile() {
@@ -700,39 +792,71 @@
             return (data.files && data.files.length > 0) ? data.files[0].id : null;
         }
 
-        async function loadState() {
+        // Pulls whatever is currently on Drive and makes it the local state (used for a brand
+        // new device/account, and for the manual "search & load" button).
+        async function pullFromDriveIfNewer() {
+            const fileId = await findDriveFile();
+            if (!fileId) {
+                driveFileId = null; // nothing on Drive yet for this account
+                lastSyncedAt = Date.now();
+                setSyncStatus(state.settings.lang === 'ar' ? 'حساب جديد - سيتم إنشاء ملف' : 'New account - file will be created', false);
+                return;
+            }
+            driveFileId = fileId;
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            if (!res.ok) throw new Error('Drive download failed: ' + res.status);
+            const parsed = await res.json();
+            state.data = parsed.data || [];
+            state.settings = parsed.settings || state.settings || { lang: 'en', theme: 'chronicle' };
+            state.unlockedAchievements = parsed.unlockedAchievements || [];
+            state.top10 = parsed.top10 || [];
+            lastSyncedAt = Date.now();
+            if (currentAccount) {
+                try { await idbSet(currentAccount.email, { state, savedAt: lastSyncedAt, lastSyncedAt }); } catch (e) { console.error(e); }
+            }
+            setSyncStatus(state.settings.lang === 'ar' ? '✓ تم التحديث من Drive' : '✓ Updated from Drive', false);
+        }
+
+        // Runs quietly whenever we come online with a valid token and the app is already
+        // showing. If you made edits while offline, those get pushed up; otherwise we check
+        // whether anything newer landed on Drive (e.g. edited from another device) and pull it.
+        async function backgroundSync() {
+            if (!accessToken || !currentAccount || !navigator.onLine) return;
             try {
-                const fileId = await findDriveFile();
-                if (fileId) {
-                    driveFileId = fileId;
-                    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                        headers: { Authorization: `Bearer ${accessToken}` }
-                    });
-                    if (!res.ok) throw new Error('Drive download failed: ' + res.status);
-                    const parsed = await res.json();
-                    state.data = parsed.data || [];
-                    state.settings = parsed.settings || { lang: 'en', theme: 'chronicle' };
-                    state.unlockedAchievements = parsed.unlockedAchievements || [];
-                    state.top10 = parsed.top10 || [];
-                    setSyncStatus(state.settings.lang === 'ar' ? '✓ تم تحميل بياناتك' : '✓ Data loaded', false);
+                const localRecord = await idbGet(currentAccount.email);
+                const localSavedAt = (localRecord && localRecord.savedAt) || 0;
+                if (localSavedAt > lastSyncedAt) {
+                    setSyncStatus(state.settings.lang === 'ar' ? 'جارٍ رفع تغييراتك المحلية...' : 'Uploading your local changes...', false);
+                    await saveStateToDrive();
                 } else {
-                    driveFileId = null; // First time for this account - a new file will be created on save
-                    setSyncStatus(state.settings.lang === 'ar' ? 'حساب جديد - سيتم إنشاء ملف' : 'New account - file will be created', false);
+                    setSyncStatus(state.settings.lang === 'ar' ? 'جارٍ التحقق من وجود تحديثات...' : 'Checking for updates...', false);
+                    await pullFromDriveIfNewer();
+                    applySettings();
+                    renderSidebar();
+                    navigate(currentView || 'dashboard');
                 }
             } catch (e) {
-                console.error("Error loading state from Drive", e);
-                setSyncStatus((state.settings.lang === 'ar' ? '⚠ فشل التحميل: ' : '⚠ Load failed: ') + e.message, true);
-                alert(state.settings.lang === 'en'
-                    ? "Could not load your data from Google Drive. Starting with an empty archive."
-                    : "تعذر تحميل بياناتك من Google Drive. سيتم البدء بسجل فارغ.");
+                console.error('Background sync failed', e);
+                setSyncStatus((state.settings.lang === 'ar' ? '⚠ تعذرت المزامنة، سيُعاد المحاولة لاحقًا' : '⚠ Sync failed, will retry later'), true);
             }
         }
 
+        // Explicit "search & load my file" button in Settings - always forces a fresh pull.
         async function manualLoadFromDrive() {
-            if (!accessToken) return;
+            if (!accessToken || !navigator.onLine) {
+                setSyncStatus(state.settings.lang === 'ar' ? 'يلزم الاتصال بالإنترنت وتسجيل الدخول أولًا' : 'You need to be online and signed in first', true);
+                return;
+            }
             setSyncStatus(state.settings.lang === 'ar' ? 'جارٍ البحث عن ملفك في Drive...' : 'Searching for your file on Drive...', false);
             driveFileId = null; // force a fresh search instead of reusing a possibly-stale id
-            await loadState();
+            try {
+                await pullFromDriveIfNewer();
+            } catch (e) {
+                setSyncStatus((state.settings.lang === 'ar' ? '⚠ فشل: ' : '⚠ Failed: ') + e.message, true);
+                return;
+            }
             if (state.data.length === 0) populateInitialData();
             applySettings();
             renderSidebar();
@@ -741,23 +865,44 @@
 
         function saveState() {
             checkAchievements();
-            // Save right away (no long delay) so quick add-then-close on mobile isn't lost
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveStateToDrive, 150);
+            // Always persist locally right away (instant, works fully offline)
+            const savedAt = Date.now();
+            if (currentAccount) {
+                idbSet(currentAccount.email, { state, savedAt, lastSyncedAt }).catch(e => console.error('IndexedDB save failed', e));
+            }
+            // Then push to Drive in the background, only if we're online and signed in
+            if (accessToken && navigator.onLine) {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(saveStateToDrive, 150);
+            } else {
+                setSyncStatus(state.settings.lang === 'ar' ? '💾 محفوظ محليًا (غير متصل)' : '💾 Saved locally (offline)', false);
+            }
         }
 
         // Make sure a pending save is flushed if the user closes/minimizes the app quickly
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && accessToken) {
+            if (document.visibilityState === 'hidden' && accessToken && navigator.onLine) {
                 clearTimeout(saveTimeout);
                 saveStateToDrive();
             }
         });
         window.addEventListener('pagehide', () => {
-            if (accessToken) {
+            if (accessToken && navigator.onLine) {
                 clearTimeout(saveTimeout);
                 saveStateToDrive();
             }
+        });
+
+        // Come back online -> sync automatically. Go offline -> just say so, keep working locally.
+        window.addEventListener('online', () => {
+            if (!appAlreadyRendered) return;
+            setSyncStatus(state.settings.lang === 'ar' ? 'عاد الاتصال - جارٍ المزامنة...' : 'Back online - syncing...', false);
+            if (accessToken) backgroundSync();
+            else attemptSilentSignIn();
+        });
+        window.addEventListener('offline', () => {
+            if (!appAlreadyRendered) return;
+            setSyncStatus(state.settings.lang === 'ar' ? '📴 غير متصل - العمل محليًا' : '📴 Offline - working locally', false);
         });
 
         function setSyncStatus(text, isError) {
@@ -769,6 +914,10 @@
 
         async function saveStateToDrive() {
             if (!accessToken) return;
+            if (!navigator.onLine) {
+                setSyncStatus(state.settings.lang === 'ar' ? '💾 محفوظ محليًا (غير متصل)' : '💾 Saved locally (offline)', false);
+                return;
+            }
             setSyncStatus(state.settings.lang === 'ar' ? 'جارٍ الحفظ...' : 'Saving...', false);
             const content = JSON.stringify(state);
             try {
@@ -797,6 +946,10 @@
                 }
                 const data = await res.json();
                 if (data.id) driveFileId = data.id;
+                lastSyncedAt = Date.now();
+                if (currentAccount) {
+                    try { await idbSet(currentAccount.email, { state, savedAt: lastSyncedAt, lastSyncedAt }); } catch (e) { console.error(e); }
+                }
                 setSyncStatus(state.settings.lang === 'ar' ? '✓ تم الحفظ في Google Drive' : '✓ Saved to Google Drive', false);
             } catch (e) {
                 console.error("Error saving state to Drive", e);
@@ -805,6 +958,10 @@
         }
 
         function manualSaveToDrive() {
+            if (!navigator.onLine) {
+                setSyncStatus(state.settings.lang === 'ar' ? '💾 محفوظ محليًا بالفعل - سيُرفع عند الاتصال' : '💾 Already saved locally - will upload once online', false);
+                return;
+            }
             clearTimeout(saveTimeout);
             saveStateToDrive();
         }
@@ -1504,7 +1661,7 @@
         }
 
         // Boot
-        document.addEventListener('DOMContentLoaded', initGoogleAuth);
+        document.addEventListener('DOMContentLoaded', boot);
 
         // Register the service worker so the site is installable (Add to Home Screen / APK wrapping)
         if ('serviceWorker' in navigator) {
