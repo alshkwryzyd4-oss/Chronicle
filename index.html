@@ -2201,7 +2201,12 @@ The user will ask you things in English or Arabic, sometimes shorthand (e.g. "Ir
 Each message includes a JSON array called CURRENT_LIBRARY with the user's existing items (title, category, year, status). Use it to:
 - Answer questions about what the user already has (e.g. "do I have X", "what am I currently watching", "how many anime do I have") directly and accurately in "reply", based only on CURRENT_LIBRARY.
 - Never propose an add_item for a title that already exists in CURRENT_LIBRARY (match loosely - ignore case, punctuation, and minor wording differences, e.g. "Spiderman: No Way Home" matches "Spider-Man: No Way Home"). Silently skip duplicates from a bulk request (like "add the whole MCU") without an action for them, and mention in "reply" which ones you skipped because they're already there.
-- Pick the correct "category" for each item using your own knowledge of what it actually is (anime vs animemovie vs movie vs series vs game) - don't just default to "movie" when unsure; think about it.
+- Pick the correct "category" for each item using your own knowledge of what it actually is - don't just default to "movie" when unsure; think about it. Specifically:
+  - "anime" = Japanese animation (TV or streaming), e.g. Jujutsu Kaisen, One Piece, Attack on Titan - these go in "anime", NEVER in "series", even though they are technically a TV show.
+  - "series" = any other (non-Japanese-animated) live-action or animated TV show, e.g. Breaking Bad, Game of Thrones, Rick and Morty.
+  - "animemovie" = any animated movie, whether Japanese (Studio Ghibli, anime films) OR Western/other (Kung Fu Panda, Shrek, Zootopia, any Pixar/DreamWorks/Disney animated film) - all animated movies go in "animemovie", NEVER in "movie".
+  - "movie" = live-action movies only.
+  - "game" = video games.
 Respond with ONLY a single valid JSON object, no markdown, no code fences, matching this exact shape:
 {
   "reply": "short friendly message in the same language the user used - a confirmation for actions, or a direct answer for questions about their library",
@@ -2211,7 +2216,7 @@ Respond with ONLY a single valid JSON object, no markdown, no code fences, match
   ]
 }
 Rules:
-- If the user doesn't specify a status for items they want added, default to "planto".
+- If the user doesn't specify a status for items they want added, default to "completed".
 - Never invent a personal rating (1-10) for the user; leave it out entirely.
 - If the user asks a question or something unrelated to adding media or changing the theme, just set "actions" to an empty array and answer normally in "reply".
 - "actions" must always be an array, even if empty.`;
@@ -2248,8 +2253,10 @@ Rules:
             return parsed;
         }
 
-        // Looks up a cover image (and year/rating if missing) for an item Gemini wants to add,
-        // using the same sources the manual "Add" search box uses, picked by category.
+        // Looks up full details (cover, year, rating, duration, episodes, seasons, platform) for
+        // an item Gemini wants to add, using the same sources the manual "Add" search box uses,
+        // picked by category. For movies/series it also fetches the TMDb details endpoint since
+        // the search endpoint alone doesn't include runtime/season/episode counts.
         async function fetchCoverForAI(title, category) {
             try {
                 let results = [];
@@ -2257,7 +2264,15 @@ Rules:
                 else if (category === 'movie' || category === 'animemovie') results = await searchTMDb(title, 'movie');
                 else if (category === 'series') results = await searchTMDb(title, 'tv');
                 else if (category === 'game') results = await searchGamesAll(title);
-                return results && results[0] ? results[0] : null;
+                const best = results && results[0] ? results[0] : null;
+                if (!best) return null;
+                if (best.tmdbId && (category === 'movie' || category === 'series' || category === 'animemovie')) {
+                    try {
+                        const details = await fetchTMDbDetails(best.tmdbId, best.tmdbType);
+                        Object.assign(best, details);
+                    } catch (e) { /* non-fatal - keep the base result without runtime/episodes */ }
+                }
+                return best;
             } catch (e) {
                 return null; // no cover found - item is still added, just without one
             }
@@ -2289,7 +2304,7 @@ Rules:
                 if (existingKeys.has(key)) return { skipped: true, title: action.title };
                 existingKeys.add(key); // guard against duplicates within the same batch too
                 const category = VALID_CATEGORIES.includes(action.category) ? action.category : 'movie';
-                const status = VALID_STATUSES.includes(action.status) ? action.status : 'planto';
+                const status = VALID_STATUSES.includes(action.status) ? action.status : 'completed';
                 const match = await fetchCoverForAI(action.title, category);
                 const item = {
                     id: (Date.now() + idx).toString(),
@@ -2303,6 +2318,12 @@ Rules:
                     cover: match ? (match.cover || '') : '',
                     dateAdded: new Date().toISOString()
                 };
+                if (match) {
+                    if ((category === 'anime' || category === 'series') && match.episodes) item.episodes = match.episodes;
+                    if ((category === 'anime' || category === 'series' || category === 'movie' || category === 'animemovie') && match.duration) item.duration = match.duration;
+                    if (category === 'series' && match.seasons) item.seasons = match.seasons;
+                    if (category === 'game' && match.platform) item.platform = match.platform;
+                }
                 return { skipped: false, item };
             }));
 
@@ -2638,7 +2659,7 @@ Rules:
             // searching. This is what lets picking a result fix an "anime vs TV series"
             // mismatch automatically instead of silently keeping the wrong category.
             if (r.detectedCategory && r.detectedCategory !== document.getElementById('itemCategory').value) {
-                document.getElementById('itemCategory').value = r.detectedCategory;
+                setSelectValue('itemCategory', r.detectedCategory);
                 toggleCategoryFields();
             }
 
@@ -2863,13 +2884,24 @@ Rules:
             document.getElementById('detailsModal').classList.add('active');
         }
 
+        // Sets a <select>'s value programmatically and fires 'change' so the custom dropdown
+        // UI (see the Custom Select Engine below) updates its visible label to match - a plain
+        // `.value = x` assignment doesn't fire that event, which left the custom trigger
+        // showing "Select..." even though the real value was set underneath.
+        function setSelectValue(id, value) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.value = value;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
         function editCurrentItem() {
             closeModal('detailsModal');
             clearAutoCover(); // avoid carrying over a leftover cover picked while editing/adding a different item
             document.getElementById('itemId').value = currentItem.id;
             document.getElementById('itemTitle').value = currentItem.title;
-            document.getElementById('itemCategory').value = currentItem.category;
-            document.getElementById('itemStatus').value = currentItem.status;
+            setSelectValue('itemCategory', currentItem.category);
+            setSelectValue('itemStatus', currentItem.status);
             document.getElementById('itemRating').value = currentItem.rating || '';
             document.getElementById('itemYear').value = currentItem.year || '';
             document.getElementById('itemNotes').value = currentItem.notes || '';
