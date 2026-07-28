@@ -141,6 +141,7 @@
         .media-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .media-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
         .badge { position: absolute; top: 0.5rem; inset-inline-end: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; background: rgba(0,0,0,0.7); color: #fff; }
+        .imdb-badge { display: inline-flex; align-items: center; gap: 0.3rem; width: fit-content; background: #f5c518; color: #000; font-weight: 800; font-size: 0.78rem; padding: 0.2rem 0.55rem; border-radius: 4px; letter-spacing: 0.01em; font-family: Arial, Helvetica, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); margin-top: 0.35rem; }
 
         /* --- SIDEBAR --- */
         .sidebar { width: 250px; background-color: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; transition: transform var(--transition); z-index: 50; }
@@ -366,13 +367,17 @@
     </main>
 
     <nav class="bottom-tab-bar" id="bottomTabBar">
+        <button class="bottom-tab-btn" data-view="dashboard" onclick="navigate('dashboard')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <span data-i18n="dashboard">Dashboard</span>
+        </button>
         <button class="bottom-tab-btn" data-view="anime" onclick="navigate('anime')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span data-i18n="anime">Anime</span>
         </button>
         <button class="bottom-tab-btn" data-view="animemovie" onclick="navigate('animemovie')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.5 5.5L20 8.5l-4 4.2L17 19l-5-2.8L7 19l1-6.3-4-4.2 5.5-1L12 2z"/><circle cx="12" cy="12" r="10"/></svg>
-            <span data-i18n="animeMovie">Anime Movies</span>
+            <span data-i18n="animeMovie">Animation Movies</span>
         </button>
         <button class="bottom-tab-btn" data-view="movie" onclick="navigate('movie')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2z M7 2v20 M17 2v20 M2 12h20 M2 7h5 M2 17h5 M17 7h5 M17 17h5"/></svg>
@@ -418,7 +423,7 @@
                             <label data-i18n="category">Category</label>
                             <select id="itemCategory" class="input" onchange="toggleCategoryFields(); handleTitleSearchInput();">
                                 <option value="anime">Anime</option>
-                                <option value="animemovie" data-i18n="animeMovie">Anime Movie</option>
+                                <option value="animemovie" data-i18n="animeMovie">Animation Movie</option>
                                 <option value="movie">Movie</option>
                                 <option value="series">TV Series</option>
                                 <option value="game">Video Game</option>
@@ -441,7 +446,7 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label data-i18n="rating">Rating (1-10)</label>
-                            <input type="number" id="itemRating" class="input" min="1" max="10">
+                            <input type="number" id="itemRating" class="input" min="1" max="10" step="0.1">
                         </div>
                         <div>
                             <label data-i18n="year">Release Year</label>
@@ -489,6 +494,7 @@
                             <span id="detStatus" style="color: var(--text-muted)"></span>
                         </div>
                         <p id="detScore" style="font-size: 1.25rem; font-weight: bold; color: var(--warning);"></p>
+                        <div id="detImdbBadge" class="imdb-badge hidden"><span>IMDb</span></div>
                         <div id="detStatsGrid" class="detail-stats-grid"></div>
                         <div style="margin-top: 1rem;">
                             <h4 data-i18n="notes" style="margin-bottom: 0.5rem; color: var(--primary)">Notes</h4>
@@ -534,8 +540,8 @@
                 schedule: "Airing Schedule", airingDay: "Airing Day", airingTime: "Airing Time", notAiring: "Not scheduled",
                 daySat: "Saturday", daySun: "Sunday", dayMon: "Monday", dayTue: "Tuesday", dayWed: "Wednesday", dayThu: "Thursday", dayFri: "Friday",
                 scheduleEmpty: "No airing days set for what you're watching yet. Edit an item to add one.", scheduleDesc: "Shows you're currently watching, grouped by the day new episodes air.",
-                animeMovie: "Anime Movies", totalEpisodesWatched: "Episodes Watched", totalMoviesWatched: "Movies Watched",
-                insightAnime: "Anime", insightSeries: "TV Series", insightGames: "Games", insightMovies: "Movies & Anime Movies",
+                animeMovie: "Animation Movies", totalEpisodesWatched: "Episodes Watched", totalMoviesWatched: "Movies Watched",
+                insightAnime: "Anime", insightSeries: "TV Series", insightGames: "Games", insightMovies: "Movies & Animation Movies",
                 titlesLabel: "titles", episodesLabel: "episodes", timeSpentLabel: "Time spent", dayShort: "d", hourShort: "h", minuteShort: "m",
                 unlockedAch: "Unlocked", lockedAch: "Locked",
                 contactMe: "Contact Me", aboutApp: "About Chronicle", version: "Version", createdBy: "Created by",
@@ -559,8 +565,8 @@
                 schedule: "جدول العرض", airingDay: "يوم الحلقة", airingTime: "وقت الحلقة", notAiring: "غير محدد",
                 daySat: "السبت", daySun: "الأحد", dayMon: "الإثنين", dayTue: "الثلاثاء", dayWed: "الأربعاء", dayThu: "الخميس", dayFri: "الجمعة",
                 scheduleEmpty: "لا يوجد أي عنصر تشاهده الآن له يوم عرض محدد. عدّل عنصرًا لإضافة يوم العرض.", scheduleDesc: "العناصر التي تشاهدها حاليًا، مُرتّبة حسب يوم صدور الحلقة الجديدة.",
-                animeMovie: "أفلام الأنمي", totalEpisodesWatched: "الحلقات المُشاهدة", totalMoviesWatched: "الأفلام المُشاهدة",
-                insightAnime: "الأنمي", insightSeries: "المسلسلات", insightGames: "الألعاب", insightMovies: "الأفلام وأفلام الأنمي",
+                animeMovie: "أفلام الأنيميشن", totalEpisodesWatched: "الحلقات المُشاهدة", totalMoviesWatched: "الأفلام المُشاهدة",
+                insightAnime: "الأنمي", insightSeries: "المسلسلات", insightGames: "الألعاب", insightMovies: "الأفلام وأفلام الأنيميشن",
                 titlesLabel: "عنوانًا", episodesLabel: "حلقة", timeSpentLabel: "الوقت المُستغرق", dayShort: "ي", hourShort: "س", minuteShort: "د",
                 unlockedAch: "مفتوحة", lockedAch: "مقفلة",
                 contactMe: "تواصل معي", aboutApp: "عن التطبيق", version: "الإصدار", createdBy: "صُنع بواسطة",
@@ -576,10 +582,10 @@
             { id: "gamer", icon: "🎮", title: { en: "Gamer", ar: "لاعب" }, desc: { en: "Complete 5 games", ar: "أكمل 5 ألعاب" }, condition: (s) => s.gamesCompleted >= 5 },
             { id: "chronicle_legend", icon: "👑", title: { en: "Chronicle Legend", ar: "أسطورة السجل" }, desc: { en: "10 completed items", ar: "10 عناصر مكتملة" }, condition: (s) => (s.moviesCompleted + s.animeCompleted + s.gamesCompleted + s.seriesCompleted + s.animeMovieCompleted) >= 10 },
             { id: "binge_watcher", icon: "📺", title: { en: "Binge Watcher", ar: "مُشاهد نهم" }, desc: { en: "Complete 5 TV series", ar: "أكمل 5 مسلسلات" }, condition: (s) => s.seriesCompleted >= 5 },
-            { id: "anime_movie_fan", icon: "🎞️", title: { en: "Studio Fan", ar: "عاشق الاستوديوهات" }, desc: { en: "Complete 3 anime movies", ar: "أكمل 3 أفلام أنمي" }, condition: (s) => s.animeMovieCompleted >= 3 },
+            { id: "anime_movie_fan", icon: "🎞️", title: { en: "Studio Fan", ar: "عاشق الاستوديوهات" }, desc: { en: "Complete 3 animation movies", ar: "أكمل 3 أفلام أنيميشن" }, condition: (s) => s.animeMovieCompleted >= 3 },
             { id: "episode_100", icon: "⏱️", title: { en: "Episode Century", ar: "قرن الحلقات" }, desc: { en: "Watch 100 episodes total", ar: "شاهد 100 حلقة" }, condition: (s) => s.totalEpisodesWatched >= 100 },
             { id: "episode_500", icon: "🌌", title: { en: "Episode Marathon", ar: "ماراثون الحلقات" }, desc: { en: "Watch 500 episodes total", ar: "شاهد 500 حلقة" }, condition: (s) => s.totalEpisodesWatched >= 500 },
-            { id: "movie_buff_20", icon: "🎟️", title: { en: "Movie Buff", ar: "خبير الأفلام" }, desc: { en: "Watch 20 movies (incl. anime movies)", ar: "شاهد 20 فيلمًا (بما فيها أفلام الأنمي)" }, condition: (s) => s.totalMoviesWatched >= 20 },
+            { id: "movie_buff_20", icon: "🎟️", title: { en: "Movie Buff", ar: "خبير الأفلام" }, desc: { en: "Watch 20 movies (incl. animation movies)", ar: "شاهد 20 فيلمًا (بما فيها أفلام الأنيميشن)" }, condition: (s) => s.totalMoviesWatched >= 20 },
             { id: "collector_25", icon: "📚", title: { en: "Collector", ar: "الجامع" }, desc: { en: "Add 25 items to your archive", ar: "أضف 25 عنصرًا لأرشيفك" }, condition: (s) => s.total >= 25 },
             { id: "collector_100", icon: "🏛️", title: { en: "Archivist", ar: "أمين الأرشيف" }, desc: { en: "Add 100 items to your archive", ar: "أضف 100 عنصر لأرشيفك" }, condition: (s) => s.total >= 100 },
             { id: "well_rounded", icon: "🧭", title: { en: "Well Rounded", ar: "متنوّع الذوق" }, desc: { en: "Complete at least 1 item in every category", ar: "أكمل عنصرًا واحدًا على الأقل من كل فئة" }, condition: (s) => s.animeCompleted > 0 && s.moviesCompleted > 0 && s.seriesCompleted > 0 && s.gamesCompleted > 0 && s.animeMovieCompleted > 0 }
@@ -607,7 +613,9 @@
         const APP_VERSION = "2.2.0"; // bump this whenever the app is meaningfully updated
 
         // --- LIVE SEARCH API KEYS ---
-        // Jikan (MyAnimeList) needs no key at all - it's used automatically for Anime / Anime Movies.
+        // Jikan (MyAnimeList) needs no key at all - it's used automatically for Anime.
+        // Animation Movies use TMDb (like Movies/TV Series), since they're generally Western
+        // animated films (Pixar, DreamWorks, Illumination...) rather than Japanese anime.
         // TMDb and RAWG need a free key from your own account - see the setup guide for how to get one.
         const TMDB_API_KEY = "72f7f751d47757575230f64d2645359e";   // used for Movies and TV Series search
         const RAWG_API_KEY = "PUT_YOUR_RAWG_API_KEY_HERE";   // used for Video Games search
@@ -1171,6 +1179,12 @@
             const menu = [
                 { id: 'dashboard', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
                 { id: 'library', icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' },
+                { sep: true },
+                { id: 'anime', icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' },
+                { id: 'animemovie', icon: 'M12 2l2.5 5.5L20 8.5l-4 4.2L17 19l-5-2.8L7 19l1-6.3-4-4.2 5.5-1L12 2z' },
+                { id: 'movie', icon: 'M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2z M7 2v20 M17 2v20 M2 12h20 M2 7h5 M2 17h5 M17 7h5 M17 17h5' },
+                { id: 'series', icon: 'M2 7h20v10H2z M12 22V17 M8 22h8' },
+                { id: 'game', icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z M8 9h.01 M12 9h.01 M16 9h.01' },
                 { id: 'watchingNow', icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
                 { id: 'schedule', icon: 'M8 2v4 M16 2v4 M3 10h18 M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
                 { id: 'completed', icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3' },
@@ -1285,7 +1299,7 @@
                     <span class="badge" style="background:${badgeColor}">${t(item.status)}</span>
                     <div class="media-info">
                         <div class="media-title">${item.title}</div>
-                        <div class="media-meta">${t(item.category)} • ${item.year || '-'}</div>
+                        <div class="media-meta">${t(item.category)} • ${item.year || '-'}${(item.category === 'movie' || item.category === 'animemovie') && item.duration ? ' • ' + item.duration + t('minuteShort') : ''}</div>
                     </div>
                 </div>
             `;
@@ -1634,8 +1648,8 @@
 
             try {
                 let results = [];
-                if (cat === 'anime' || cat === 'animemovie') results = await searchJikan(query);
-                else if (cat === 'movie') results = await searchTMDb(query, 'movie');
+                if (cat === 'anime') results = await searchJikan(query);
+                else if (cat === 'movie' || cat === 'animemovie') results = await searchTMDb(query, 'movie');
                 else if (cat === 'series') results = await searchTMDb(query, 'tv');
                 else if (cat === 'game') results = await searchRAWG(query);
 
@@ -1684,7 +1698,7 @@
                         year: a.year || (a.aired?.from ? new Date(a.aired.from).getFullYear() : ''),
                         extra: a.type || '',
                         cover: a.images?.jpg?.image_url || '',
-                        rating: a.score ? Math.round(a.score) : '',
+                        rating: a.score ? Math.round(a.score * 10) / 10 : '',
                         episodes: a.episodes || '',
                         duration: a.duration ? (parseInt(a.duration) || '') : ''
                     }));
@@ -1709,7 +1723,7 @@
                 year: (type === 'tv' ? r.first_air_date : r.release_date)?.slice(0, 4) || '',
                 extra: r.vote_average ? '★ ' + r.vote_average.toFixed(1) : '',
                 cover: r.poster_path ? `https://image.tmdb.org/t/p/w342${r.poster_path}` : '',
-                rating: r.vote_average ? Math.round(r.vote_average) : '',
+                rating: r.vote_average ? Math.round(r.vote_average * 10) / 10 : '',
                 tmdbId: r.id,
                 tmdbType: endpoint
             }));
@@ -1727,7 +1741,7 @@
                 year: g.released ? g.released.slice(0, 4) : '',
                 extra: g.rating ? '★ ' + g.rating : '',
                 cover: g.background_image || '',
-                rating: g.rating ? Math.round(g.rating * 2) : '', // RAWG uses a 0-5 scale -> convert to /10
+                rating: g.rating ? Math.round(g.rating * 2 * 10) / 10 : '', // RAWG uses a 0-5 scale -> convert to /10
                 platform: (g.platforms || []).slice(0, 3).map(p => p.platform.name).join(', ')
             }));
         }
@@ -1814,6 +1828,22 @@
         function toggleCategoryFields() {
             const cat = document.getElementById('itemCategory').value;
             const container = document.getElementById('dynamicFields');
+
+            // Preserve whatever values are already sitting in the fields (typed by the
+            // user, or filled in earlier via editCurrentItem/search) BEFORE we wipe the
+            // container and regenerate it for the newly selected category. Otherwise
+            // switching e.g. TV Series -> Anime mid-edit would silently drop the
+            // episode count, duration, etc.
+            const preserved = {
+                seasons: document.getElementById('itemSeasons')?.value || '',
+                episodes: document.getElementById('itemEpisodes')?.value || '',
+                duration: document.getElementById('itemDuration')?.value || '',
+                airingDay: document.getElementById('itemAiringDay')?.value || '',
+                airingTime: document.getElementById('itemAiringTime')?.value || '',
+                platform: document.getElementById('itemPlatform')?.value || '',
+                hoursPlayed: document.getElementById('itemHours')?.value || ''
+            };
+
             container.innerHTML = '';
 
             if (cat === 'anime' || cat === 'series') {
@@ -1846,6 +1876,15 @@
                     <div style="grid-column:1/-1"><label>${t('duration')}</label><input type="number" id="itemDuration" class="input" placeholder="120"></div>
                 `;
             }
+
+            // Restore any preserved values that have a matching field in the new form.
+            if (document.getElementById('itemSeasons')) document.getElementById('itemSeasons').value = preserved.seasons || 1;
+            if (document.getElementById('itemEpisodes')) document.getElementById('itemEpisodes').value = preserved.episodes;
+            if (document.getElementById('itemDuration')) document.getElementById('itemDuration').value = preserved.duration;
+            if (document.getElementById('itemAiringDay')) document.getElementById('itemAiringDay').value = preserved.airingDay;
+            if (document.getElementById('itemAiringTime')) document.getElementById('itemAiringTime').value = preserved.airingTime;
+            if (document.getElementById('itemPlatform')) document.getElementById('itemPlatform').value = preserved.platform;
+            if (document.getElementById('itemHours')) document.getElementById('itemHours').value = preserved.hoursPlayed;
         }
 
         document.getElementById('addForm').addEventListener('submit', async (e) => {
@@ -1925,7 +1964,8 @@
             document.getElementById('detStatus').innerText = "• " + t(currentItem.status);
             document.getElementById('detCover').src = currentItem.cover || '';
             document.getElementById('detCover').style.display = currentItem.cover ? 'block' : 'none';
-            document.getElementById('detScore').innerText = currentItem.rating ? `${currentItem.rating}/10 ★` : '';
+            document.getElementById('detScore').innerText = currentItem.rating ? `${parseFloat(currentItem.rating).toFixed(1)}/10 ★` : '';
+            document.getElementById('detImdbBadge').classList.toggle('hidden', !currentItem.rating);
             document.getElementById('detNotes').innerText = currentItem.notes || '-';
 
             const chips = [];
@@ -2101,7 +2141,8 @@
         // --- INITIAL DATA GENERATION ---
         function populateInitialData() {
             const games = [ "GTA V", "Red Dead Redemption GOTY", "Blur", "Call of Duty Black Ops", "Black Ops II", "Modern Warfare 3", "Dragon Ball Xenoverse", "Dragon Ball Z Ultimate Tenkaichi", "Naruto Storm series", "Minecraft PS3", "Attack on Titan Wings of Freedom", "Budokai Tenkaichi", "Budokai 3", "Downhill Domination", "Metal Slug Anthology", "Rise to Honor", "PES 2014" ];
-            const movies = [ "Spider-Man", "Zootopia", "Cars", "Kung Fu Panda", "Ice Age", "Wall-E", "Up", "Coco", "Ratatouille", "Minions", "Despicable Me", "Soul", "Inside Out", "Klaus", "Interstellar", "Oppenheimer", "Sonic", "Home Alone", "Johnny English" ];
+            const movies = [ "Spider-Man", "Interstellar", "Oppenheimer", "Sonic", "Home Alone", "Johnny English" ];
+            const animationMovies = [ "Zootopia", "Cars", "Kung Fu Panda", "Ice Age", "Wall-E", "Up", "Coco", "Ratatouille", "Minions", "Despicable Me", "Soul", "Inside Out", "Klaus" ];
             const anime = [ "Attack on Titan", "Black Clover", "Death Note", "Blue Lock", "Dragon Ball Z", "Dragon Ball Kai", "Dragon Ball Super", "Demon Slayer", "Jujutsu Kaisen", "Fire Force", "Chainsaw Man", "Mashle", "Kaiju No.8" ];
             const series = [ "Loki", "WandaVision", "What If", "Marvel Zombies", "I Am Groot", "Peaky Blinders", "Squid Game", "Wednesday", "Mr Robot", "Breaking Bad", "Better Call Saul" ];
 
@@ -2113,7 +2154,7 @@
                         title: title,
                         category: category,
                         status: 'completed', // default set to completed for populated data to see stats
-                        rating: Math.floor(Math.random() * 4) + 7, // Random 7-10 rating
+                        rating: Math.round((Math.random() * 3 + 7) * 10) / 10, // Random 7.0-10.0 rating
                         favorite: Math.random() > 0.8,
                         dateAdded: new Date(Date.now() - Math.floor(Math.random()*10000000000)).toISOString()
                     });
@@ -2122,6 +2163,7 @@
 
             addItems(games, 'game');
             addItems(movies, 'movie');
+            addItems(animationMovies, 'animemovie');
             addItems(anime, 'anime');
             addItems(series, 'series');
             saveState();
