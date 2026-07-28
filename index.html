@@ -128,6 +128,8 @@
         .btn-primary:hover { background-color: var(--primary-hover); }
         .btn-surface { background-color: var(--surface); border: 1px solid var(--border); }
         .btn-surface:hover { background-color: var(--surface-hover); }
+        .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .btn:disabled:hover { background-color: var(--surface); }
         .btn-danger { background-color: var(--danger); color: #fff; }
 
         .input { width: 100%; padding: 0.75rem; border-radius: var(--radius); background-color: var(--bg); border: 1px solid var(--border); color: var(--text); margin-bottom: 1rem; }
@@ -153,6 +155,32 @@
         
         /* --- MAIN CONTENT --- */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* Ambient animated background: a few soft, blurred, slowly drifting color blobs
+           using the active theme's own colors, so it stays visually consistent no matter
+           which theme is selected. Sits behind the content (z-index: 0) and never
+           intercepts clicks (pointer-events: none). Respects reduced-motion preference. */
+        .main-content::before {
+            content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+            background:
+                radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--primary) 22%, transparent) 0%, transparent 45%),
+                radial-gradient(circle at 85% 30%, color-mix(in srgb, var(--primary) 16%, transparent) 0%, transparent 40%),
+                radial-gradient(circle at 50% 85%, color-mix(in srgb, var(--primary) 14%, transparent) 0%, transparent 45%);
+            background-size: 180% 180%;
+            animation: ambientDrift 22s ease-in-out infinite alternate;
+            filter: blur(40px);
+            opacity: 0.6;
+        }
+        @keyframes ambientDrift {
+            0%   { background-position: 0% 0%, 100% 0%, 50% 100%; transform: scale(1); }
+            50%  { background-position: 20% 30%, 80% 20%, 60% 80%; transform: scale(1.08); }
+            100% { background-position: 10% 10%, 90% 40%, 40% 90%; transform: scale(1); }
+        }
+        .content-area, .header, .bottom-tab-bar { position: relative; z-index: 1; }
+        @media (prefers-reduced-motion: reduce) {
+            .main-content::before { animation: none; }
+        }
+
         .bottom-tab-bar {
             position: fixed; bottom: 0; inset-inline: 0; height: 64px; z-index: 60;
             background: var(--surface); border-top: 1px solid var(--border);
@@ -594,7 +622,9 @@
                 contactMe: "Contact Me", aboutApp: "About Chronicle", version: "Version", createdBy: "Created by",
                 resetLibrary: "Reset My Library", resetConfirm: "This permanently deletes every anime, movie, series, and game you've added, on this device and in Drive once synced. This cannot be undone. Continue?",
                 resetDone: "Your library has been reset.", years: "yr",
-                avgRating: "Average Rating", highRatedLabel: "Top Rated (9+)", favoritesLabel: "Favorites"
+                avgRating: "Average Rating", highRatedLabel: "Top Rated (9+)", favoritesLabel: "Favorites",
+                sortBy: "Sort by", sortName: "Name", sortRating: "Rating", sortYear: "Release Year", sortDateAdded: "Date Added", sortAsc: "Ascending", sortDesc: "Descending",
+                moveUp: "Move up", moveDown: "Move down"
             },
             ar: {
                 appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
@@ -620,7 +650,9 @@
                 contactMe: "تواصل معي", aboutApp: "عن التطبيق", version: "الإصدار", createdBy: "صُنع بواسطة",
                 resetLibrary: "إعادة تعيين مكتبتي", resetConfirm: "سيؤدي هذا لحذف كل الأنمي والأفلام والمسلسلات والألعاب التي أضفتها نهائيًا، على هذا الجهاز وعلى Drive بعد المزامنة. لا يمكن التراجع عن هذا. هل تريد المتابعة؟",
                 resetDone: "تمت إعادة تعيين مكتبتك.", years: "سنة",
-                avgRating: "متوسط التقييم", highRatedLabel: "الأعلى تقييمًا (9+)", favoritesLabel: "المفضلة"
+                avgRating: "متوسط التقييم", highRatedLabel: "الأعلى تقييمًا (9+)", favoritesLabel: "المفضلة",
+                sortBy: "الترتيب حسب", sortName: "الاسم", sortRating: "التقييم", sortYear: "سنة الإصدار", sortDateAdded: "تاريخ الإضافة", sortAsc: "تصاعدي", sortDesc: "تنازلي",
+                moveUp: "تحريك للأعلى", moveDown: "تحريك للأسفل"
             }
         };
 
@@ -638,14 +670,48 @@
             { id: "collector_25", icon: "📚", title: { en: "Collector", ar: "الجامع" }, desc: { en: "Add 25 items to your archive", ar: "أضف 25 عنصرًا لأرشيفك" }, condition: (s) => s.total >= 25 },
             { id: "collector_100", icon: "🏛️", title: { en: "Archivist", ar: "أمين الأرشيف" }, desc: { en: "Add 100 items to your archive", ar: "أضف 100 عنصر لأرشيفك" }, condition: (s) => s.total >= 100 },
             { id: "well_rounded", icon: "🧭", title: { en: "Well Rounded", ar: "متنوّع الذوق" }, desc: { en: "Complete at least 1 item in every category", ar: "أكمل عنصرًا واحدًا على الأقل من كل فئة" }, condition: (s) => s.animeCompleted > 0 && s.moviesCompleted > 0 && s.seriesCompleted > 0 && s.gamesCompleted > 0 && s.animeMovieCompleted > 0 },
-            { id: "critics_choice", icon: "⭐", title: { en: "Critic's Choice", ar: "اختيار الناقد" }, desc: { en: "Rate 10 completed items 9.0 or higher", ar: "قيّم 10 عناصر مكتملة بـ 9.0 أو أعلى" }, condition: (s) => s.highRated >= 10 }
+            { id: "critics_choice", icon: "⭐", title: { en: "Critic's Choice", ar: "اختيار الناقد" }, desc: { en: "Rate 10 completed items 9.0 or higher", ar: "قيّم 10 عناصر مكتملة بـ 9.0 أو أعلى" }, condition: (s) => s.highRated >= 10 },
+
+            { id: "games_10h", icon: "🕹️", title: { en: "Casual Gamer", ar: "لاعب مبتدئ" }, desc: { en: "Play 10 hours of games", ar: "العب 10 ساعات" }, condition: (s) => s.gamesHoursPlayedTotal >= 10 },
+            { id: "games_50h", icon: "🎯", title: { en: "Dedicated Gamer", ar: "لاعب ملتزم" }, desc: { en: "Play 50 hours of games", ar: "العب 50 ساعة" }, condition: (s) => s.gamesHoursPlayedTotal >= 50 },
+            { id: "games_100h", icon: "🏆", title: { en: "No-Life Gamer", ar: "مهووس الألعاب" }, desc: { en: "Play 100 hours of games", ar: "العب 100 ساعة" }, condition: (s) => s.gamesHoursPlayedTotal >= 100 },
+            { id: "games_300h", icon: "💎", title: { en: "Gaming Legend", ar: "أسطورة الألعاب" }, desc: { en: "Play 300 hours of games", ar: "العب 300 ساعة" }, condition: (s) => s.gamesHoursPlayedTotal >= 300 },
+
+            { id: "episode_1000", icon: "🌠", title: { en: "Episode Universe", ar: "كون الحلقات" }, desc: { en: "Watch 1000 episodes total", ar: "شاهد 1000 حلقة" }, condition: (s) => s.totalEpisodesWatched >= 1000 },
+            { id: "movie_buff_50", icon: "🍿", title: { en: "Cinephile", ar: "عاشق السينما" }, desc: { en: "Watch 50 movies (incl. animation movies)", ar: "شاهد 50 فيلمًا (بما فيها أفلام الأنيميشن)" }, condition: (s) => s.totalMoviesWatched >= 50 },
+
+            { id: "chronicle_legend_25", icon: "🎖️", title: { en: "Seasoned Chronicler", ar: "مؤرِّخ متمرّس" }, desc: { en: "25 completed items", ar: "25 عنصرًا مكتملًا" }, condition: (s) => (s.moviesCompleted + s.animeCompleted + s.gamesCompleted + s.seriesCompleted + s.animeMovieCompleted) >= 25 },
+            { id: "chronicle_legend_50", icon: "🏅", title: { en: "Master Chronicler", ar: "خبير السجل" }, desc: { en: "50 completed items", ar: "50 عنصرًا مكتملًا" }, condition: (s) => (s.moviesCompleted + s.animeCompleted + s.gamesCompleted + s.seriesCompleted + s.animeMovieCompleted) >= 50 },
+            { id: "anime_legend_20", icon: "🔥", title: { en: "Otaku", ar: "أوتاكو" }, desc: { en: "Complete 20 anime", ar: "أكمل 20 أنمي" }, condition: (s) => s.animeCompleted >= 20 },
+            { id: "binge_watcher_15", icon: "📡", title: { en: "Series Marathoner", ar: "عاشق المسلسلات" }, desc: { en: "Complete 15 TV series", ar: "أكمل 15 مسلسلًا" }, condition: (s) => s.seriesCompleted >= 15 },
+            { id: "gamer_20", icon: "🎮", title: { en: "Pro Gamer", ar: "لاعب محترف" }, desc: { en: "Complete 20 games", ar: "أكمل 20 لعبة" }, condition: (s) => s.gamesCompleted >= 20 },
+            { id: "anime_movie_fan_10", icon: "🎬", title: { en: "Animation Enthusiast", ar: "شغوف الأنيميشن" }, desc: { en: "Complete 10 animation movies", ar: "أكمل 10 أفلام أنيميشن" }, condition: (s) => s.animeMovieCompleted >= 10 },
+
+            { id: "collector_250", icon: "🗃️", title: { en: "Grand Archivist", ar: "أمين الأرشيف الأكبر" }, desc: { en: "Add 250 items to your archive", ar: "أضف 250 عنصرًا لأرشيفك" }, condition: (s) => s.total >= 250 },
+            { id: "own_10_anime", icon: "📀", title: { en: "Anime Shelf", ar: "رفّ الأنمي" }, desc: { en: "Add 10 anime titles", ar: "أضف 10 عناوين أنمي" }, condition: (s) => s.owned.anime >= 10 },
+            { id: "own_10_movies", icon: "🎦", title: { en: "Movie Shelf", ar: "رفّ الأفلام" }, desc: { en: "Add 10 movie titles", ar: "أضف 10 عناوين أفلام" }, condition: (s) => s.owned.movie >= 10 },
+            { id: "own_10_series", icon: "📼", title: { en: "Series Shelf", ar: "رفّ المسلسلات" }, desc: { en: "Add 10 TV series titles", ar: "أضف 10 عناوين مسلسلات" }, condition: (s) => s.owned.series >= 10 },
+            { id: "own_10_games", icon: "🗂️", title: { en: "Games Shelf", ar: "رفّ الألعاب" }, desc: { en: "Add 10 game titles", ar: "أضف 10 عناوين ألعاب" }, condition: (s) => s.owned.game >= 10 },
+            { id: "own_10_animemovie", icon: "🎠", title: { en: "Animation Shelf", ar: "رفّ الأنيميشن" }, desc: { en: "Add 10 animation movie titles", ar: "أضف 10 عناوين أفلام أنيميشن" }, condition: (s) => s.owned.animemovie >= 10 },
+
+            { id: "dropped_5", icon: "🗑️", title: { en: "Not For Me", ar: "ليس على ذوقي" }, desc: { en: "Drop 5 items", ar: "اترك 5 عناصر" }, condition: (s) => s.dropped >= 5 },
+            { id: "planto_10", icon: "📝", title: { en: "Ambitious Planner", ar: "مخطط طموح" }, desc: { en: "Add 10 items to your plan-to-watch list", ar: "أضف 10 عناصر لقائمة الانتظار" }, condition: (s) => s.planToCount >= 10 },
+            { id: "favorites_5", icon: "💛", title: { en: "Fan", ar: "معجب" }, desc: { en: "Mark 5 items as favorite", ar: "أضف 5 عناصر للمفضلة" }, condition: (s) => s.favoritesTotal >= 5 },
+            { id: "favorites_20", icon: "❤️", title: { en: "Superfan", ar: "معجب كبير" }, desc: { en: "Mark 20 items as favorite", ar: "أضف 20 عنصرًا للمفضلة" }, condition: (s) => s.favoritesTotal >= 20 },
+
+            { id: "perfectionist", icon: "💯", title: { en: "Perfectionist", ar: "الكمال بعينه" }, desc: { en: "Rate a completed item a perfect 10", ar: "قيّم عنصرًا مكتملًا بعلامة كاملة 10" }, condition: (s) => s.hasPerfectRating },
+            { id: "harsh_critic", icon: "🧊", title: { en: "Harsh Critic", ar: "ناقد قاسٍ" }, desc: { en: "Rate a completed item 5.0 or lower", ar: "قيّم عنصرًا مكتملًا بـ 5.0 أو أقل" }, condition: (s) => s.hasLowRatedCompleted },
+            { id: "high_standards", icon: "🌟", title: { en: "High Standards", ar: "معايير عالية" }, desc: { en: "Reach an overall average rating of 8.0+", ar: "حقق متوسط تقييم عام 8.0 فأكثر" }, condition: (s) => s.avgRatingOverall >= 8 },
+
+            { id: "top10_full", icon: "🏆", title: { en: "Top Tier", ar: "المستوى الأعلى" }, desc: { en: "Fill one Top 10 list completely", ar: "أكمل قائمة توب 10 واحدة بالكامل" }, condition: (s) => s.top10FullCount >= 1 },
+            { id: "top10_all_full", icon: "👑", title: { en: "Ultimate Ranker", ar: "المُرتِّب الأعظم" }, desc: { en: "Fill every Top 10 list completely", ar: "أكمل كل قوائم التوب 10 بالكامل" }, condition: (s) => s.top10AllFull }
         ];
 
         let state = {
             data: [],
-            settings: { lang: 'en', theme: 'chronicle' },
+            settings: { lang: 'en', theme: 'chronicle', sortBy: 'dateAdded', sortDir: 'desc' },
             unlockedAchievements: [],
-            top10: { anime: [], series: [], movies: [], games: [] }
+            top10: { anime: [], animemovie: [], series: [], movies: [], games: [] }
         };
         let currentView = 'dashboard';
         let currentItem = null;
@@ -654,9 +720,9 @@
         // loaded from an old backup/Drive file that still has the old flat-array format.
         function normalizeTop10() {
             if (!state.top10 || Array.isArray(state.top10) || typeof state.top10 !== 'object') {
-                state.top10 = { anime: [], series: [], movies: [], games: [] };
+                state.top10 = { anime: [], animemovie: [], series: [], movies: [], games: [] };
             }
-            ['anime', 'series', 'movies', 'games'].forEach(c => {
+            ['anime', 'animemovie', 'series', 'movies', 'games'].forEach(c => {
                 if (!Array.isArray(state.top10[c])) state.top10[c] = [];
             });
         }
@@ -979,6 +1045,8 @@
             }
             normalizeTop10();
             if (state.data.length === 0) populateInitialData();
+            if (!state.settings.sortBy) state.settings.sortBy = 'dateAdded';
+            if (!state.settings.sortDir) state.settings.sortDir = 'desc';
             applySettings();
             renderSidebar();
             renderSidebarAccountWidget();
@@ -1361,13 +1429,65 @@
             let filtered = state.data;
             if(filterCat !== 'all') filtered = filtered.filter(i => i.category === filterCat);
             if(customFilter) filtered = filtered.filter(customFilter);
+            filtered = sortItems(filtered);
 
             container.innerHTML = `
-                <input type="text" id="searchInput" class="input" placeholder="${t('search')}" onkeyup="filterLibrary()">
+                <div class="flex gap-2" style="margin-bottom:1rem; flex-wrap:wrap;">
+                    <input type="text" id="searchInput" class="input" style="flex:1; min-width:150px; margin-bottom:0;" placeholder="${t('search')}" onkeyup="filterLibrary()">
+                    <select id="librarySortBy" class="input" style="width:auto; margin-bottom:0;" onchange="changeSort(this.value, null)">
+                        <option value="dateAdded" ${state.settings.sortBy === 'dateAdded' ? 'selected' : ''}>${t('sortDateAdded')}</option>
+                        <option value="name" ${state.settings.sortBy === 'name' ? 'selected' : ''}>${t('sortName')}</option>
+                        <option value="rating" ${state.settings.sortBy === 'rating' ? 'selected' : ''}>${t('sortRating')}</option>
+                        <option value="year" ${state.settings.sortBy === 'year' ? 'selected' : ''}>${t('sortYear')}</option>
+                    </select>
+                    <button type="button" class="btn btn-surface" style="margin-bottom:0;" onclick="changeSort(null, state.settings.sortDir === 'asc' ? 'desc' : 'asc')" title="${state.settings.sortDir === 'asc' ? t('sortAsc') : t('sortDesc')}">
+                        ${state.settings.sortDir === 'asc' ? '↑' : '↓'}
+                    </button>
+                </div>
                 <div class="media-grid" id="libraryGrid">
                     ${filtered.length ? filtered.map(generateMediaCard).join('') : `<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--text-muted)">${t('nothingHere')}</div>`}
                 </div>
             `;
+        }
+
+        // Applies the user's chosen sort field/direction (persisted in settings) to a list
+        // of items. Rating/year sort missing values to the bottom regardless of direction,
+        // so unrated/undated items don't clutter the top of the list.
+        function sortItems(items) {
+            const field = state.settings.sortBy || 'dateAdded';
+            const dir = state.settings.sortDir === 'asc' ? 1 : -1;
+            const arr = items.slice();
+            arr.sort((a, b) => {
+                if (field === 'name') {
+                    return dir * a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+                }
+                if (field === 'rating') {
+                    const ra = parseFloat(a.rating), rb = parseFloat(b.rating);
+                    if (isNaN(ra) && isNaN(rb)) return 0;
+                    if (isNaN(ra)) return 1;
+                    if (isNaN(rb)) return -1;
+                    return dir * (ra - rb);
+                }
+                if (field === 'year') {
+                    const ya = parseInt(a.year), yb = parseInt(b.year);
+                    if (isNaN(ya) && isNaN(yb)) return 0;
+                    if (isNaN(ya)) return 1;
+                    if (isNaN(yb)) return -1;
+                    return dir * (ya - yb);
+                }
+                // dateAdded
+                return dir * (new Date(a.dateAdded || 0) - new Date(b.dateAdded || 0));
+            });
+            return arr;
+        }
+
+        // Called from the library toolbar's sort dropdown/direction button. Pass null for
+        // whichever argument didn't change.
+        function changeSort(field, dir) {
+            if (field !== null) state.settings.sortBy = field;
+            if (dir !== null) state.settings.sortDir = dir;
+            saveState();
+            navigate(currentView);
         }
 
         function filterLibrary() {
@@ -1452,17 +1572,17 @@
 
         function top10Meta() {
             return {
-                anime:  { label: t('anime'),  icon: '🍥' },
-                series: { label: t('series'), icon: '📺' },
-                movies: { label: t('movie'),  icon: '🎬' },
-                games:  { label: t('game'),   icon: '🎮' }
+                anime:     { label: t('anime'),     icon: '🍥' },
+                animemovie:{ label: t('animeMovie'), icon: '🎞️' },
+                movies:    { label: t('movie'),      icon: '🎬' },
+                series:    { label: t('series'),     icon: '📺' },
+                games:     { label: t('game'),       icon: '🎮' }
             };
         }
 
-        // The pool of items eligible for a given Top 10 category - completed items only,
-        // with "movies" combining regular Movies and Animation Movies into one list.
+        // The pool of items eligible for a given Top 10 category - completed items only.
+        // "movies" is regular Movies only; Animation Movies now have their own "animemovie" list.
         function top10CategoryItems(cat) {
-            if (cat === 'movies') return state.data.filter(i => (i.category === 'movie' || i.category === 'animemovie') && i.status === 'completed');
             const catKey = cat === 'games' ? 'game' : cat;
             return state.data.filter(i => i.category === catKey && i.status === 'completed');
         }
@@ -1514,7 +1634,13 @@
                         <div class="rank-number">${medal || (index + 1)}</div>
                         <div class="media-title" style="flex:1">${item.title}</div>
                         <div class="badge" style="position:static; display:block">${t(item.category)}</div>
-                        ${top10EditMode ? `<button class="btn btn-danger" style="padding:0.35rem 0.6rem;" onclick="removeFromTop10('${id}')" title="${t('delete')}">✕</button>` : ''}
+                        ${top10EditMode ? `
+                            <div class="flex gap-2" style="flex-shrink:0;">
+                                <button class="btn btn-surface" style="padding:0.35rem 0.6rem;" ${index === 0 ? 'disabled' : ''} onclick="moveTop10Item(${index}, -1)" title="${t('moveUp')}">▲</button>
+                                <button class="btn btn-surface" style="padding:0.35rem 0.6rem;" ${index === list.length - 1 ? 'disabled' : ''} onclick="moveTop10Item(${index}, 1)" title="${t('moveDown')}">▼</button>
+                                <button class="btn btn-danger" style="padding:0.35rem 0.6rem;" onclick="removeFromTop10('${id}')" title="${t('delete')}">✕</button>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
@@ -1530,6 +1656,15 @@
 
         function toggleTop10Edit() {
             top10EditMode = !top10EditMode;
+            renderRankings(document.getElementById('viewContainer'));
+        }
+
+        function moveTop10Item(index, dir) {
+            const list = state.top10[currentTop10Cat];
+            const newIndex = index + dir;
+            if (newIndex < 0 || newIndex >= list.length) return;
+            [list[index], list[newIndex]] = [list[newIndex], list[index]];
+            saveState();
             renderRankings(document.getElementById('viewContainer'));
         }
 
@@ -2452,7 +2587,15 @@
                 planToCount: state.data.filter(i => i.status === 'planto').length,
                 favoritesTotal: state.data.filter(i => i.favorite).length,
                 avgRatingOverall: avgRating(state.data),
-                highRated: state.data.filter(i => i.status === 'completed' && parseFloat(i.rating) >= 9).length
+                highRated: state.data.filter(i => i.status === 'completed' && parseFloat(i.rating) >= 9).length,
+                gamesHoursPlayedTotal: games.filter(i => watchedStatuses.includes(i.status)).reduce((sum, i) => sum + (parseFloat(i.hoursPlayed) || 0), 0),
+                hasPerfectRating: state.data.some(i => i.status === 'completed' && parseFloat(i.rating) === 10),
+                hasLowRatedCompleted: state.data.some(i => i.status === 'completed' && i.rating !== '' && !isNaN(parseFloat(i.rating)) && parseFloat(i.rating) <= 5),
+                top10FullCount: Object.values(state.top10 || {}).filter(l => l.length >= 10).length,
+                top10AllFull: Object.keys(top10Meta()).every(c => (state.top10[c] || []).length >= 10),
+                owned: {
+                    anime: anime.length, series: series.length, movie: movies.length, animemovie: animeMovies.length, game: games.length
+                }
             };
         }
 
@@ -2507,6 +2650,8 @@
                     const parsed = JSON.parse(e.target.result);
                     if(parsed.data) {
                         state = parsed;
+                        if (!state.settings.sortBy) state.settings.sortBy = 'dateAdded';
+                        if (!state.settings.sortDir) state.settings.sortDir = 'desc';
                         normalizeTop10();
                         saveState();
                         alert(state.settings.lang === 'ar' ? "تمت استعادة النسخة الاحتياطية بنجاح!" : "Backup restored successfully!");
