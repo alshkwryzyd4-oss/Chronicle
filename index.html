@@ -703,7 +703,7 @@
                 aiSend: "Send", aiThinking: "Thinking...", aiClear: "Clear chat",
                 aiWelcome: "Hi! Tell me what to add or change - e.g. \"Add Iron Man 1&2&3, Avengers 1&2&3 and Wakanda as movies\" or \"switch to the ocean theme\". I can handle several requests at once.",
                 aiKeyMissing: "No Gemini API key is set. Go to Settings → Gemini API Key, add your free key from Google AI Studio, and try again.",
-                aiError: "Something went wrong talking to Gemini.", aiItemsAdded: "Added to your library", aiThemeChanged: "Theme changed",
+                aiError: "Something went wrong talking to Gemini.", aiItemsAdded: "Added to your library", aiItemsSkipped: "Already in your library, skipped", aiThemeChanged: "Theme changed",
                 geminiKeyLabel: "Gemini API Key", geminiKeyDesc: "Needed for the AI Assistant tab. Get a free key at aistudio.google.com/apikey — it's stored only on this device and is never uploaded anywhere.",
                 geminiKeyPlaceholder: "Paste your Gemini API key here", geminiKeySave: "Save key", geminiKeyClear: "Remove key",
                 geminiKeySaved: "Gemini API key saved.", geminiKeyRemoved: "Gemini API key removed.", geminiKeySet: "Key set ✓"
@@ -739,7 +739,7 @@
                 aiSend: "إرسال", aiThinking: "جارٍ التفكير...", aiClear: "مسح المحادثة",
                 aiWelcome: "أهلًا! أخبرني بما تريد إضافته أو تغييره - مثلاً \"أضف Iron Man 1&2&3 وAvengers 1&2&3 وWakanda كأفلام\" أو \"غيّر الثيم إلى المحيط\". يمكنني تنفيذ عدة طلبات دفعة واحدة.",
                 aiKeyMissing: "لم يتم إعداد مفتاح Gemini API. اذهب إلى الإعدادات ← مفتاح Gemini API، أضف مفتاحك المجاني من Google AI Studio، ثم أعد المحاولة.",
-                aiError: "حدث خطأ أثناء التواصل مع Gemini.", aiItemsAdded: "تمت الإضافة لمكتبتك", aiThemeChanged: "تم تغيير الثيم",
+                aiError: "حدث خطأ أثناء التواصل مع Gemini.", aiItemsAdded: "تمت الإضافة لمكتبتك", aiItemsSkipped: "موجودة مسبقًا، تم تخطّيها", aiThemeChanged: "تم تغيير الثيم",
                 geminiKeyLabel: "مفتاح Gemini API", geminiKeyDesc: "مطلوب لتبويب المساعد الذكي. احصل على مفتاح مجاني من aistudio.google.com/apikey — يُخزَّن فقط على هذا الجهاز ولا يُرفع لأي مكان أبدًا.",
                 geminiKeyPlaceholder: "ألصق مفتاح Gemini API هنا", geminiKeySave: "حفظ المفتاح", geminiKeyClear: "إزالة المفتاح",
                 geminiKeySaved: "تم حفظ مفتاح Gemini API.", geminiKeyRemoved: "تمت إزالة مفتاح Gemini API.", geminiKeySet: "المفتاح مُعدّ ✓"
@@ -2164,7 +2164,7 @@
             try {
                 const result = await callGeminiAI(text);
                 aiChatLog.pop(); // remove "thinking" placeholder
-                const summary = applyAIActions(result.actions || []);
+                const summary = await applyAIActions(result.actions || []);
                 let replyText = result.reply || '';
                 if (summary) replyText = (replyText ? replyText + '\n\n' : '') + summary;
                 aiChatLog.push({ role: 'bot', text: replyText || t('aiError') });
@@ -2179,15 +2179,32 @@
             }
         }
 
+        // Builds a compact summary of what's already in the user's library (title, category,
+        // year, status) so Gemini can answer questions about it and avoid re-adding things
+        // that are already there. Capped so it can't blow up the prompt on huge libraries.
+        function buildLibraryContextForAI() {
+            const items = state.data.slice(0, 500).map(i => ({
+                title: i.title,
+                category: i.category,
+                year: i.year || null,
+                status: i.status
+            }));
+            return JSON.stringify(items);
+        }
+
         // Sends the user's message to Gemini along with a system instruction describing
         // the app's data model, and asks for a strict JSON response containing a short
         // reply plus a list of structured actions (add_item / change_theme) to execute.
         async function callGeminiAI(userText) {
             const systemInstruction = `You are the in-app assistant for "Chronicle", a personal media tracker (anime, animation movies, movies, TV series, video games).
-The user will ask you things in English or Arabic, sometimes shorthand (e.g. "Iron man 1&2&3" means three separate items: "Iron Man", "Iron Man 2", "Iron Man 3"). Expand shorthand like "123" or "1&2&3" after a title into that many separate numbered/titled entries using your knowledge of the real franchise entries when you know them.
+The user will ask you things in English or Arabic, sometimes shorthand (e.g. "Iron man 1&2&3" means three separate items: "Iron Man", "Iron Man 2", "Iron Man 3"). Expand shorthand like "123" or "1&2&3" after a title into that many separate numbered/titled entries using your knowledge of the real franchise entries when you know them. For a request like "add the whole MCU", use your knowledge of the real Marvel Cinematic Universe release list (movies AND relevant series) to generate the actual entries - don't just add one vague "MCU" item.
+Each message includes a JSON array called CURRENT_LIBRARY with the user's existing items (title, category, year, status). Use it to:
+- Answer questions about what the user already has (e.g. "do I have X", "what am I currently watching", "how many anime do I have") directly and accurately in "reply", based only on CURRENT_LIBRARY.
+- Never propose an add_item for a title that already exists in CURRENT_LIBRARY (match loosely - ignore case, punctuation, and minor wording differences, e.g. "Spiderman: No Way Home" matches "Spider-Man: No Way Home"). Silently skip duplicates from a bulk request (like "add the whole MCU") without an action for them, and mention in "reply" which ones you skipped because they're already there.
+- Pick the correct "category" for each item using your own knowledge of what it actually is (anime vs animemovie vs movie vs series vs game) - don't just default to "movie" when unsure; think about it.
 Respond with ONLY a single valid JSON object, no markdown, no code fences, matching this exact shape:
 {
-  "reply": "short friendly confirmation message in the same language the user used",
+  "reply": "short friendly message in the same language the user used - a confirmation for actions, or a direct answer for questions about their library",
   "actions": [
     { "type": "add_item", "title": "string", "category": "anime|animemovie|movie|series|game", "year": number|null, "status": "completed|watching|planto|dropped" },
     { "type": "change_theme", "theme": "chronicle|dark|light|cyberpunk|ocean|forest|purple-galaxy|amoled|sunset|mint|rose|slate" }
@@ -2196,13 +2213,12 @@ Respond with ONLY a single valid JSON object, no markdown, no code fences, match
 Rules:
 - If the user doesn't specify a status for items they want added, default to "planto".
 - Never invent a personal rating (1-10) for the user; leave it out entirely.
-- If the user asks for something unrelated to adding media or changing the theme, just set "actions" to an empty array and answer normally in "reply".
-- If unsure of the category, make your best guess (movie/series/anime/animemovie/game).
+- If the user asks a question or something unrelated to adding media or changing the theme, just set "actions" to an empty array and answer normally in "reply".
 - "actions" must always be an array, even if empty.`;
 
             const body = {
                 systemInstruction: { parts: [{ text: systemInstruction }] },
-                contents: [{ role: 'user', parts: [{ text: userText }] }],
+                contents: [{ role: 'user', parts: [{ text: `CURRENT_LIBRARY = ${buildLibraryContextForAI()}\n\nUser message: ${userText}` }] }],
                 generationConfig: { responseMimeType: 'application/json', temperature: 0.4 }
             };
 
@@ -2232,36 +2248,73 @@ Rules:
             return parsed;
         }
 
-        // Executes the structured actions Gemini returned (adding items / changing theme)
-        // and returns a short human-readable summary of what was done.
-        function applyAIActions(actions) {
+        // Looks up a cover image (and year/rating if missing) for an item Gemini wants to add,
+        // using the same sources the manual "Add" search box uses, picked by category.
+        async function fetchCoverForAI(title, category) {
+            try {
+                let results = [];
+                if (category === 'anime') results = await searchAnimeAll(title);
+                else if (category === 'movie' || category === 'animemovie') results = await searchTMDb(title, 'movie');
+                else if (category === 'series') results = await searchTMDb(title, 'tv');
+                else if (category === 'game') results = await searchGamesAll(title);
+                return results && results[0] ? results[0] : null;
+            } catch (e) {
+                return null; // no cover found - item is still added, just without one
+            }
+        }
+
+        // Normalizes a title for loose duplicate matching (case/punctuation/spacing-insensitive).
+        function normalizeTitleForMatch(str) {
+            return String(str || '').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g, '');
+        }
+
+        // Executes the structured actions Gemini returned (adding items / changing theme),
+        // fetching a real cover image for each new item, and returns a short human-readable
+        // summary of what was done.
+        async function applyAIActions(actions) {
             if (!Array.isArray(actions) || actions.length === 0) return '';
             let addedTitles = [];
+            let skippedTitles = [];
             let themeChangedTo = null;
 
-            actions.forEach((action, idx) => {
-                if (!action || typeof action !== 'object') return;
-                if (action.type === 'add_item' && action.title) {
-                    const category = VALID_CATEGORIES.includes(action.category) ? action.category : 'movie';
-                    const status = VALID_STATUSES.includes(action.status) ? action.status : 'planto';
-                    const item = {
-                        id: (Date.now() + idx).toString(),
-                        title: String(action.title),
-                        category: category,
-                        status: status,
-                        rating: '',
-                        year: action.year ? String(action.year) : '',
-                        notes: '',
-                        favorite: false,
-                        cover: '',
-                        dateAdded: new Date().toISOString()
-                    };
-                    state.data.push(item);
-                    addedTitles.push(item.title);
-                } else if (action.type === 'change_theme' && VALID_THEMES.includes(action.theme)) {
-                    state.settings.theme = action.theme;
-                    themeChangedTo = action.theme;
-                }
+            const existingKeys = new Set(state.data.map(i => normalizeTitleForMatch(i.title)));
+
+            const addActions = actions.filter(a => a && a.type === 'add_item' && a.title);
+            const otherActions = actions.filter(a => a && a.type === 'change_theme' && VALID_THEMES.includes(a.theme));
+
+            // Fetch covers for every new item in parallel so a big batch (e.g. "add the whole MCU")
+            // doesn't add them one slow request at a time.
+            const results = await Promise.all(addActions.map(async (action, idx) => {
+                const key = normalizeTitleForMatch(action.title);
+                if (existingKeys.has(key)) return { skipped: true, title: action.title };
+                existingKeys.add(key); // guard against duplicates within the same batch too
+                const category = VALID_CATEGORIES.includes(action.category) ? action.category : 'movie';
+                const status = VALID_STATUSES.includes(action.status) ? action.status : 'planto';
+                const match = await fetchCoverForAI(action.title, category);
+                const item = {
+                    id: (Date.now() + idx).toString(),
+                    title: String(action.title),
+                    category: category,
+                    status: status,
+                    rating: '',
+                    year: (match && match.year) ? String(match.year) : (action.year ? String(action.year) : ''),
+                    notes: '',
+                    favorite: false,
+                    cover: match ? (match.cover || '') : '',
+                    dateAdded: new Date().toISOString()
+                };
+                return { skipped: false, item };
+            }));
+
+            results.forEach(r => {
+                if (r.skipped) { skippedTitles.push(r.title); return; }
+                state.data.push(r.item);
+                addedTitles.push(r.item.title);
+            });
+
+            otherActions.forEach(action => {
+                state.settings.theme = action.theme;
+                themeChangedTo = action.theme;
             });
 
             if (addedTitles.length > 0 || themeChangedTo) {
@@ -2272,6 +2325,7 @@ Rules:
 
             const parts = [];
             if (addedTitles.length > 0) parts.push('✅ ' + t('aiItemsAdded') + ': ' + addedTitles.join(', '));
+            if (skippedTitles.length > 0) parts.push('↷ ' + t('aiItemsSkipped') + ': ' + skippedTitles.join(', '));
             if (themeChangedTo) parts.push('🎨 ' + t('aiThemeChanged') + ': ' + themeChangedTo);
             return parts.join('\n');
         }
