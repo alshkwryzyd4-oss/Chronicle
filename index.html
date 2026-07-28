@@ -674,7 +674,8 @@
         const APP_VERSION = "2.2.0"; // bump this whenever the app is meaningfully updated
 
         // --- LIVE SEARCH API KEYS ---
-        // Jikan (MyAnimeList) needs no key at all - it's used automatically for Anime.
+        // Anime uses Jikan (MyAnimeList) + AniList together - neither needs a key.
+        // Games uses RAWG (needs a key below) + CheapShark together - CheapShark needs no key.
         // Animation Movies use TMDb (like Movies/TV Series), since they're generally Western
         // animated films (Pixar, DreamWorks, Illumination...) rather than Japanese anime.
         // TMDb and RAWG need a free key from your own account - see the setup guide for how to get one.
@@ -1869,10 +1870,10 @@
             // "Anime" or "TV Series" (or nothing at all) first; we look everywhere and let
             // them pick the right result, which then sets the category for them.
             const sources = [
-                { cat: 'anime', run: searchJikan(query) },
+                { cat: 'anime', run: searchAnimeAll(query) },
                 { cat: 'movie', run: searchTMDb(query, 'movie') },
                 { cat: 'series', run: searchTMDb(query, 'tv') },
-                { cat: 'game', run: searchRAWG(query) }
+                { cat: 'game', run: searchGamesAll(query) }
             ];
 
             const settled = await Promise.allSettled(sources.map(s => s.run));
@@ -1992,6 +1993,105 @@
                 rating: g.rating ? Math.round(g.rating * 2 * 10) / 10 : '', // RAWG uses a 0-5 scale -> convert to /10
                 platform: (g.platforms || []).slice(0, 3).map(p => p.platform.name).join(', ')
             }));
+        }
+
+        async function searchAniList(query) {
+            // AniList - free, no key required, official GraphQL API (unlike Jikan it's not
+            // scraped, so it's much less prone to rate-limit failures). Used as a second
+            // anime source so results still show up if Jikan is down/throttled.
+            if (query.trim().length < 2) return [];
+            const gql = `
+                query ($search: String) {
+                    Page(page: 1, perPage: 6) {
+                        media(search: $search, type: ANIME, sort: POPULARITY_DESC) {
+                            title { romaji english }
+                            seasonYear
+                            format
+                            episodes
+                            duration
+                            averageScore
+                            coverImage { large }
+                        }
+                    }
+                }`;
+            const res = await fetch('https://graphql.anilist.co', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ query: gql, variables: { search: query } })
+            });
+            if (!res.ok) throw new Error('AniList request failed: ' + res.status);
+            const data = await res.json();
+            const list = data?.data?.Page?.media || [];
+            return list.map(a => ({
+                title: a.title.english || a.title.romaji,
+                year: a.seasonYear || '',
+                extra: a.format || '',
+                cover: a.coverImage?.large || '',
+                rating: a.averageScore ? Math.round(a.averageScore / 10 * 10) / 10 : '',
+                episodes: a.episodes || '',
+                duration: a.duration || ''
+            }));
+        }
+
+        // Runs Jikan and AniList together for anime, merges the results and drops
+        // duplicates (same title from both sources) so the list stays clean. Only
+        // throws if BOTH sources fail - if either succeeds, its results are shown.
+        async function searchAnimeAll(query) {
+            const settled = await Promise.allSettled([searchJikan(query), searchAniList(query)]);
+            const merged = [];
+            const seen = new Set();
+            let lastError = null;
+            settled.forEach(r => {
+                if (r.status === 'fulfilled') {
+                    r.value.forEach(item => {
+                        const key = item.title.trim().toLowerCase();
+                        if (!seen.has(key)) { seen.add(key); merged.push(item); }
+                    });
+                } else {
+                    lastError = r.reason;
+                }
+            });
+            if (!merged.length && lastError) throw lastError;
+            return merged;
+        }
+
+        async function searchCheapShark(query) {
+            // CheapShark - free, no key required. It's a deal-tracking API rather than a
+            // full games database, so it has no ratings/platforms, but it covers most
+            // well-known PC titles and works as a fallback when RAWG has no key set.
+            const res = await fetch(`https://www.cheapshark.com/api/1.0/games?title=${encodeURIComponent(query)}&limit=6`);
+            if (!res.ok) throw new Error('CheapShark request failed: ' + res.status);
+            const data = await res.json();
+            return (Array.isArray(data) ? data : []).slice(0, 6).map(g => ({
+                title: g.external,
+                year: '',
+                extra: g.cheapest ? '$' + g.cheapest : '',
+                cover: g.thumb || '',
+                rating: '',
+                platform: ''
+            }));
+        }
+
+        // Runs RAWG and CheapShark together for games. RAWG needs a key (skipped/throws if
+        // not configured); CheapShark never does, so games search keeps working even
+        // before a RAWG key is set up.
+        async function searchGamesAll(query) {
+            const settled = await Promise.allSettled([searchRAWG(query), searchCheapShark(query)]);
+            const merged = [];
+            const seen = new Set();
+            let lastError = null;
+            settled.forEach(r => {
+                if (r.status === 'fulfilled') {
+                    r.value.forEach(item => {
+                        const key = item.title.trim().toLowerCase();
+                        if (!seen.has(key)) { seen.add(key); merged.push(item); }
+                    });
+                } else {
+                    lastError = r.reason;
+                }
+            });
+            if (!merged.length && lastError) throw lastError;
+            return merged;
         }
 
         // The TMDb search endpoint doesn't include runtime/season/episode counts - those only
@@ -2249,6 +2349,7 @@
 
         function editCurrentItem() {
             closeModal('detailsModal');
+            clearAutoCover(); // avoid carrying over a leftover cover picked while editing/adding a different item
             document.getElementById('itemId').value = currentItem.id;
             document.getElementById('itemTitle').value = currentItem.title;
             document.getElementById('itemCategory').value = currentItem.category;
