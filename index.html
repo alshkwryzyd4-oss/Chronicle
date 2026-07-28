@@ -1667,18 +1667,33 @@
         }
 
         async function searchJikan(query) {
-            const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=6&sfw`);
-            if (!res.ok) throw new Error('Jikan request failed: ' + res.status);
-            const data = await res.json();
-            return (data.data || []).map(a => ({
-                title: a.title_english || a.title,
-                year: a.year || (a.aired?.from ? new Date(a.aired.from).getFullYear() : ''),
-                extra: a.type || '',
-                cover: a.images?.jpg?.image_url || '',
-                rating: a.score ? Math.round(a.score) : '',
-                episodes: a.episodes || '',
-                duration: a.duration ? (parseInt(a.duration) || '') : ''
-            }));
+            // Jikan is a free, unofficial API that scrapes MyAnimeList live - it fails
+            // intermittently with 5xx errors even when nothing is wrong on our end, so we
+            // retry a couple of times with a short delay before giving up.
+            let lastError;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=6&sfw`);
+                    if (!res.ok) {
+                        if (res.status >= 500 && attempt < 2) { await new Promise(r => setTimeout(r, 600 * (attempt + 1))); continue; }
+                        throw new Error('Jikan request failed: ' + res.status);
+                    }
+                    const data = await res.json();
+                    return (data.data || []).map(a => ({
+                        title: a.title_english || a.title,
+                        year: a.year || (a.aired?.from ? new Date(a.aired.from).getFullYear() : ''),
+                        extra: a.type || '',
+                        cover: a.images?.jpg?.image_url || '',
+                        rating: a.score ? Math.round(a.score) : '',
+                        episodes: a.episodes || '',
+                        duration: a.duration ? (parseInt(a.duration) || '') : ''
+                    }));
+                } catch (e) {
+                    lastError = e;
+                    if (attempt < 2) await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+                }
+            }
+            throw lastError;
         }
 
         async function searchTMDb(query, type) {
