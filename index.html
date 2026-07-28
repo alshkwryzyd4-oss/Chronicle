@@ -136,6 +136,11 @@
         .input:focus { border-color: var(--primary); }
         
         .card { background-color: var(--surface); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); }
+        .ai-chat-card { max-height: calc(100vh - 160px); }
+        .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.25rem; }
+        .ai-bubble { max-width: 80%; padding: 0.6rem 0.85rem; border-radius: 14px; font-size: 0.92rem; line-height: 1.45; white-space: pre-wrap; }
+        .ai-bubble-bot { align-self: flex-start; background-color: var(--bg); border: 1px solid var(--border); border-start-start-radius: 4px; }
+        .ai-bubble-user { align-self: flex-end; background-color: var(--primary); color: #fff; border-end-end-radius: 4px; }
         .media-card { position: relative; border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: transform var(--transition); background-color: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column;}
         .media-card:hover { transform: translateY(-5px); border-color: var(--primary); }
         .media-cover { width: 100%; aspect-ratio: 2/3; object-fit: cover; background-color: var(--bg); }
@@ -194,10 +199,23 @@
             gap: 3px; color: var(--text-muted); font-size: 0.62rem; font-weight: 600;
             transition: color 0.25s ease, transform 0.25s ease;
         }
-        .bottom-tab-btn svg { width: 21px; height: 21px; transition: transform 0.25s ease; }
+        .bottom-tab-btn svg { width: 24px; height: 24px; transition: transform 0.25s ease; }
         .bottom-tab-btn.active { color: var(--primary); }
-        .bottom-tab-btn.active svg { transform: translateY(-2px) scale(1.08); }
+        .bottom-tab-btn.active svg { transform: translateY(-2px) scale(1.1); }
         .bottom-tab-btn:active svg { transform: scale(0.9); }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        .ai-fab {
+            position: fixed; bottom: 80px; inset-inline-end: 18px; z-index: 61;
+            width: 52px; height: 52px; border-radius: 50%;
+            background-color: var(--primary); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            transition: transform 0.25s ease, background-color var(--transition), bottom 0.28s ease, opacity 0.28s ease;
+        }
+        .ai-fab:hover { background-color: var(--primary-hover); }
+        .ai-fab:active { transform: scale(0.92); }
+        .ai-fab.active { box-shadow: 0 0 0 3px var(--primary) inset, 0 4px 14px rgba(0,0,0,0.35); }
+        .ai-fab.fab-hidden { transform: translateY(140%); opacity: 0; pointer-events: none; }
         .header { height: 60px; background-color: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; justify-content: space-between; }
         .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; padding-bottom: 76px; transition: transform 0.3s ease; }
 
@@ -474,31 +492,35 @@
     </main>
 
     <nav class="bottom-tab-bar" id="bottomTabBar">
-        <button class="bottom-tab-btn" data-view="dashboard" onclick="navigate('dashboard')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-            <span data-i18n="dashboard">Dashboard</span>
+        <button class="bottom-tab-btn" data-view="dashboard" data-i18n-title="dashboard" onclick="navigate('dashboard')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            <span class="sr-only" data-i18n="dashboard">Dashboard</span>
         </button>
-        <button class="bottom-tab-btn" data-view="anime" onclick="navigate('anime')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <span data-i18n="anime">Anime</span>
+        <button class="bottom-tab-btn" data-view="anime" data-i18n-title="anime" onclick="navigate('anime')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"/><circle cx="12" cy="8" r="1.6"/><path d="M12 10v11"/><path d="M12 17a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1"/></svg>
+            <span class="sr-only" data-i18n="anime">Anime</span>
         </button>
-        <button class="bottom-tab-btn" data-view="animemovie" onclick="navigate('animemovie')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.5 5.5L20 8.5l-4 4.2L17 19l-5-2.8L7 19l1-6.3-4-4.2 5.5-1L12 2z"/><circle cx="12" cy="12" r="10"/></svg>
-            <span data-i18n="animeMovie">Animation Movies</span>
+        <button class="bottom-tab-btn" data-view="animemovie" data-i18n-title="animeMovie" onclick="navigate('animemovie')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+            <span class="sr-only" data-i18n="animeMovie">Animation Movies</span>
         </button>
-        <button class="bottom-tab-btn" data-view="movie" onclick="navigate('movie')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2z M7 2v20 M17 2v20 M2 12h20 M2 7h5 M2 17h5 M17 7h5 M17 17h5"/></svg>
-            <span data-i18n="movie">Movies</span>
+        <button class="bottom-tab-btn" data-view="movie" data-i18n-title="movie" onclick="navigate('movie')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 7.5h4M3 12h18M3 16.5h4M17 7.5h4M17 16.5h4"/></svg>
+            <span class="sr-only" data-i18n="movie">Movies</span>
         </button>
-        <button class="bottom-tab-btn" data-view="series" onclick="navigate('series')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20v10H2z"/><path d="M12 22V17 M8 22h8"/></svg>
-            <span data-i18n="series">Series</span>
+        <button class="bottom-tab-btn" data-view="series" data-i18n-title="series" onclick="navigate('series')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+            <span class="sr-only" data-i18n="series">Series</span>
         </button>
-        <button class="bottom-tab-btn" data-view="game" onclick="navigate('game')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h.01 M12 9h.01 M16 9h.01"/></svg>
-            <span data-i18n="game">Games</span>
+        <button class="bottom-tab-btn" data-view="game" data-i18n-title="game" onclick="navigate('game')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4"/><path d="M8 10v4"/><path d="M15 13h.01"/><path d="M18 11h.01"/></svg>
+            <span class="sr-only" data-i18n="game">Games</span>
         </button>
     </nav>
+
+    <button class="ai-fab" id="aiFab" onclick="navigate('ai')" aria-label="AI">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+    </button>
     </div><!-- /#appContainer -->
 
     <!-- Modals -->
@@ -674,7 +696,12 @@
                 resetDone: "Your library has been reset.", years: "yr",
                 avgRating: "Average Rating", highRatedLabel: "Top Rated (9+)", favoritesLabel: "Favorites",
                 sortBy: "Sort by", sortName: "Name", sortRating: "Rating", sortYear: "Release Year", sortDateAdded: "Date Added", sortAsc: "Ascending", sortDesc: "Descending",
-                moveUp: "Move up", moveDown: "Move down"
+                moveUp: "Move up", moveDown: "Move down",
+                ai: "AI", aiTitle: "AI Assistant", aiPlaceholder: "e.g. Add Iron Man 1, 2, 3 and change the theme to ocean...",
+                aiSend: "Send", aiThinking: "Thinking...", aiClear: "Clear chat",
+                aiWelcome: "Hi! Tell me what to add or change - e.g. \"Add Iron Man 1&2&3, Avengers 1&2&3 and Wakanda as movies\" or \"switch to the ocean theme\". I can handle several requests at once.",
+                aiKeyMissing: "No Gemini API key is set. Add one in the GEMINI_API_KEY constant in the code.",
+                aiError: "Something went wrong talking to Gemini.", aiItemsAdded: "Added to your library", aiThemeChanged: "Theme changed"
             },
             ar: {
                 appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
@@ -702,7 +729,12 @@
                 resetDone: "تمت إعادة تعيين مكتبتك.", years: "سنة",
                 avgRating: "متوسط التقييم", highRatedLabel: "الأعلى تقييمًا (9+)", favoritesLabel: "المفضلة",
                 sortBy: "الترتيب حسب", sortName: "الاسم", sortRating: "التقييم", sortYear: "سنة الإصدار", sortDateAdded: "تاريخ الإضافة", sortAsc: "تصاعدي", sortDesc: "تنازلي",
-                moveUp: "تحريك للأعلى", moveDown: "تحريك للأسفل"
+                moveUp: "تحريك للأعلى", moveDown: "تحريك للأسفل",
+                ai: "الذكاء الاصطناعي", aiTitle: "المساعد الذكي", aiPlaceholder: "مثال: أضف Iron Man 1&2&3 وغيّر الثيم إلى المحيط...",
+                aiSend: "إرسال", aiThinking: "جارٍ التفكير...", aiClear: "مسح المحادثة",
+                aiWelcome: "أهلًا! أخبرني بما تريد إضافته أو تغييره - مثلاً \"أضف Iron Man 1&2&3 وAvengers 1&2&3 وWakanda كأفلام\" أو \"غيّر الثيم إلى المحيط\". يمكنني تنفيذ عدة طلبات دفعة واحدة.",
+                aiKeyMissing: "لم يتم إعداد مفتاح Gemini API. أضف المفتاح في المتغير GEMINI_API_KEY داخل الكود.",
+                aiError: "حدث خطأ أثناء التواصل مع Gemini.", aiItemsAdded: "تمت الإضافة لمكتبتك", aiThemeChanged: "تم تغيير الثيم"
             }
         };
 
@@ -797,6 +829,10 @@
         // TMDb and RAWG need a free key from your own account - see the setup guide for how to get one.
         const TMDB_API_KEY = "72f7f751d47757575230f64d2645359e";   // used for Movies and TV Series search
         const RAWG_API_KEY = "PUT_YOUR_RAWG_API_KEY_HERE";   // used for Video Games search
+        // Gemini API key - used by the "AI" tab to add multiple items at once and change the theme via natural language.
+        // Get a free key at https://aistudio.google.com/apikey
+        const GEMINI_API_KEY = "AQ.Ab8RN6L7cJ30R2GV205bFuylPiV2lk8idQ_zxNzwUPhtUauTuQ";
+        const GEMINI_MODEL = "gemini-2.5-flash";
         const ACCOUNTS_KEY = "chronicle_accounts";
         const LAST_EMAIL_KEY = "chronicle_last_email";
 
@@ -1326,6 +1362,9 @@
                 if (el.tagName === 'INPUT' && el.type === 'text') el.placeholder = t(key);
                 else el.innerText = t(key);
             });
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                el.title = t(el.getAttribute('data-i18n-title'));
+            });
             document.getElementById('headerTitle').innerText = t(currentView);
         }
 
@@ -1343,6 +1382,8 @@
             if(activeNav) activeNav.classList.add('active');
 
             document.querySelectorAll('.bottom-tab-btn').forEach(el => el.classList.toggle('active', el.getAttribute('data-view') === view));
+            const aiFab = document.getElementById('aiFab');
+            if (aiFab) aiFab.classList.toggle('active', view === 'ai');
 
             const container = document.getElementById('viewContainer');
             container.innerHTML = ''; // clear
@@ -1365,6 +1406,7 @@
                 case 'timeline': renderTimeline(container); break;
                 case 'statistics': renderStatistics(container); break;
                 case 'settings': renderSettings(container); break;
+                case 'ai': renderAI(container); break;
             }
 
             // Retrigger the fade/rise entrance on every navigation (same element, forced reflow)
@@ -1379,19 +1421,21 @@
 
         function renderSidebar() {
             const menu = [
-                { id: 'dashboard', icon: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+                { id: 'dashboard', icon: 'M3 3h7v9H3z M14 3h7v5h-7z M14 12h7v9h-7z M3 16h7v5H3z' },
                 { id: 'library', icon: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' },
                 { sep: true },
-                { id: 'anime', icon: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' },
-                { id: 'animemovie', icon: 'M12 2l2.5 5.5L20 8.5l-4 4.2L17 19l-5-2.8L7 19l1-6.3-4-4.2 5.5-1L12 2z' },
-                { id: 'movie', icon: 'M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2z M7 2v20 M17 2v20 M2 12h20 M2 7h5 M2 17h5 M17 7h5 M17 17h5' },
-                { id: 'series', icon: 'M2 7h20v10H2z M12 22V17 M8 22h8' },
-                { id: 'game', icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z M8 9h.01 M12 9h.01 M16 9h.01' },
+                { id: 'anime', icon: 'M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1 M12 10v11 M12 17a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1' },
+                { id: 'animemovie', icon: 'M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z M6.2 5.3 9.3 9.2 M12.4 3.4 15.5 7.4 M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z' },
+                { id: 'movie', icon: 'M3 3h18v18H3z M7 3v18 M17 3v18 M3 7.5h4 M3 12h18 M3 16.5h4 M17 7.5h4 M17 16.5h4' },
+                { id: 'series', icon: 'M2 7h20v15H2z M17 2l-5 5-5-5' },
+                { id: 'game', icon: 'M2 6h20v12H2z M6 12h4 M8 10v4 M15 13h.01 M18 11h.01' },
                 { id: 'watchingNow', icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
                 { id: 'schedule', icon: 'M8 2v4 M16 2v4 M3 10h18 M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
                 { id: 'completed', icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3' },
                 { id: 'planTo', icon: 'M12 2v20 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
                 { id: 'favorites', icon: 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' },
+                { sep: true },
+                { id: 'ai', icon: 'M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z' },
                 { sep: true },
                 { id: 'rankings', icon: 'M12 20V10 M18 20V4 M6 20v-4' },
                 { id: 'achievements', icon: 'M8 21h8 M12 17v4 M7 4h10 M12 4v13a4 4 0 0 1-4-4v-1h-1a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1' },
@@ -1995,6 +2039,200 @@
                     </div>
                 </div>
             `;
+        }
+
+        // --- AI ASSISTANT (Gemini) ---
+        // In-memory chat log only (not persisted/synced) - just for this session's conversation.
+        let aiChatLog = [];
+        let aiBusy = false;
+
+        const VALID_THEMES = ['chronicle', 'dark', 'light', 'cyberpunk', 'ocean', 'forest', 'purple-galaxy', 'amoled', 'sunset', 'mint', 'rose', 'slate'];
+        const VALID_CATEGORIES = ['anime', 'animemovie', 'movie', 'series', 'game'];
+        const VALID_STATUSES = ['completed', 'watching', 'planto', 'dropped'];
+
+        function renderAI(container) {
+            container.innerHTML = `
+                <div class="card ai-chat-card" style="max-width:700px; margin:0 auto; display:flex; flex-direction:column; height:calc(100vh - 160px);">
+                    <div class="flex justify-between items-center" style="margin-bottom:0.75rem;">
+                        <h3 style="font-family:var(--font-display);">${t('aiTitle')}</h3>
+                        <button class="btn btn-surface" style="padding:0.35rem 0.7rem; font-size:0.8rem;" onclick="clearAIChat()">${t('aiClear')}</button>
+                    </div>
+                    <div id="aiMessages" class="ai-messages"></div>
+                    <div class="flex gap-2" style="margin-top:0.75rem;">
+                        <textarea id="aiInput" class="input" style="margin-bottom:0; resize:none;" rows="2" placeholder="${t('aiPlaceholder')}" onkeydown="handleAIKeydown(event)"></textarea>
+                        <button class="btn btn-primary" id="aiSendBtn" style="align-self:flex-end;" onclick="sendAIMessage()">${t('aiSend')}</button>
+                    </div>
+                </div>
+            `;
+            renderAIMessages();
+        }
+
+        function renderAIMessages() {
+            const wrap = document.getElementById('aiMessages');
+            if (!wrap) return;
+            if (aiChatLog.length === 0) {
+                wrap.innerHTML = `<div class="ai-bubble ai-bubble-bot">${t('aiWelcome')}</div>`;
+            } else {
+                wrap.innerHTML = aiChatLog.map(m =>
+                    `<div class="ai-bubble ${m.role === 'user' ? 'ai-bubble-user' : 'ai-bubble-bot'}">${escapeHtml(m.text)}</div>`
+                ).join('');
+            }
+            wrap.scrollTop = wrap.scrollHeight;
+        }
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.innerText = str == null ? '' : String(str);
+            return d.innerHTML;
+        }
+
+        function handleAIKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendAIMessage();
+            }
+        }
+
+        function clearAIChat() {
+            aiChatLog = [];
+            renderAIMessages();
+        }
+
+        async function sendAIMessage() {
+            if (aiBusy) return;
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('PUT_YOUR_GEMINI_API_KEY_HERE')) {
+                aiChatLog.push({ role: 'user', text });
+                aiChatLog.push({ role: 'bot', text: t('aiKeyMissing') });
+                renderAIMessages();
+                input.value = '';
+                return;
+            }
+
+            aiChatLog.push({ role: 'user', text });
+            input.value = '';
+            aiBusy = true;
+            const sendBtn = document.getElementById('aiSendBtn');
+            if (sendBtn) sendBtn.disabled = true;
+            aiChatLog.push({ role: 'bot', text: t('aiThinking') });
+            renderAIMessages();
+
+            try {
+                const result = await callGeminiAI(text);
+                aiChatLog.pop(); // remove "thinking" placeholder
+                const summary = applyAIActions(result.actions || []);
+                let replyText = result.reply || '';
+                if (summary) replyText = (replyText ? replyText + '\n\n' : '') + summary;
+                aiChatLog.push({ role: 'bot', text: replyText || t('aiError') });
+            } catch (err) {
+                console.error('Gemini AI error', err);
+                aiChatLog.pop();
+                aiChatLog.push({ role: 'bot', text: t('aiError') + ' (' + err.message + ')' });
+            } finally {
+                aiBusy = false;
+                if (sendBtn) sendBtn.disabled = false;
+                renderAIMessages();
+            }
+        }
+
+        // Sends the user's message to Gemini along with a system instruction describing
+        // the app's data model, and asks for a strict JSON response containing a short
+        // reply plus a list of structured actions (add_item / change_theme) to execute.
+        async function callGeminiAI(userText) {
+            const systemInstruction = `You are the in-app assistant for "Chronicle", a personal media tracker (anime, animation movies, movies, TV series, video games).
+The user will ask you things in English or Arabic, sometimes shorthand (e.g. "Iron man 1&2&3" means three separate items: "Iron Man", "Iron Man 2", "Iron Man 3"). Expand shorthand like "123" or "1&2&3" after a title into that many separate numbered/titled entries using your knowledge of the real franchise entries when you know them.
+Respond with ONLY a single valid JSON object, no markdown, no code fences, matching this exact shape:
+{
+  "reply": "short friendly confirmation message in the same language the user used",
+  "actions": [
+    { "type": "add_item", "title": "string", "category": "anime|animemovie|movie|series|game", "year": number|null, "status": "completed|watching|planto|dropped" },
+    { "type": "change_theme", "theme": "chronicle|dark|light|cyberpunk|ocean|forest|purple-galaxy|amoled|sunset|mint|rose|slate" }
+  ]
+}
+Rules:
+- If the user doesn't specify a status for items they want added, default to "planto".
+- Never invent a personal rating (1-10) for the user; leave it out entirely.
+- If the user asks for something unrelated to adding media or changing the theme, just set "actions" to an empty array and answer normally in "reply".
+- If unsure of the category, make your best guess (movie/series/anime/animemovie/game).
+- "actions" must always be an array, even if empty.`;
+
+            const body = {
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                contents: [{ role: 'user', parts: [{ text: userText }] }],
+                generationConfig: { responseMimeType: 'application/json', temperature: 0.4 }
+            };
+
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+                body: JSON.stringify(body)
+            });
+
+            if (!res.ok) {
+                const errText = await res.text().catch(() => '');
+                throw new Error('HTTP ' + res.status + ' ' + errText.slice(0, 150));
+            }
+
+            const data = await res.json();
+            const rawText = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+            let parsed;
+            try {
+                parsed = JSON.parse(rawText);
+            } catch (e) {
+                // Fallback: try to pull a JSON object out of the text in case the model
+                // wrapped it in something unexpected.
+                const match = rawText.match(/\{[\s\S]*\}/);
+                if (match) parsed = JSON.parse(match[0]);
+                else throw new Error('Could not parse AI response');
+            }
+            return parsed;
+        }
+
+        // Executes the structured actions Gemini returned (adding items / changing theme)
+        // and returns a short human-readable summary of what was done.
+        function applyAIActions(actions) {
+            if (!Array.isArray(actions) || actions.length === 0) return '';
+            let addedTitles = [];
+            let themeChangedTo = null;
+
+            actions.forEach((action, idx) => {
+                if (!action || typeof action !== 'object') return;
+                if (action.type === 'add_item' && action.title) {
+                    const category = VALID_CATEGORIES.includes(action.category) ? action.category : 'movie';
+                    const status = VALID_STATUSES.includes(action.status) ? action.status : 'planto';
+                    const item = {
+                        id: (Date.now() + idx).toString(),
+                        title: String(action.title),
+                        category: category,
+                        status: status,
+                        rating: '',
+                        year: action.year ? String(action.year) : '',
+                        notes: '',
+                        favorite: false,
+                        cover: '',
+                        dateAdded: new Date().toISOString()
+                    };
+                    state.data.push(item);
+                    addedTitles.push(item.title);
+                } else if (action.type === 'change_theme' && VALID_THEMES.includes(action.theme)) {
+                    state.settings.theme = action.theme;
+                    themeChangedTo = action.theme;
+                }
+            });
+
+            if (addedTitles.length > 0 || themeChangedTo) {
+                saveState();
+                if (themeChangedTo) applySettings();
+                renderSidebar();
+            }
+
+            const parts = [];
+            if (addedTitles.length > 0) parts.push('✅ ' + t('aiItemsAdded') + ': ' + addedTitles.join(', '));
+            if (themeChangedTo) parts.push('🎨 ' + t('aiThemeChanged') + ': ' + themeChangedTo);
+            return parts.join('\n');
         }
 
         function changeSetting(key, val) {
@@ -2751,6 +2989,7 @@
             let hideTimeout = null;
             const scrollEl = document.getElementById('viewContainer');
             const tabBar = document.getElementById('bottomTabBar');
+            const fab = document.getElementById('aiFab');
             if (!scrollEl || !tabBar) return;
             scrollEl.addEventListener('scroll', () => {
                 const current = scrollEl.scrollTop;
@@ -2758,13 +2997,18 @@
                 if (Math.abs(delta) > 4) {
                     if (delta > 0 && current > 40) {
                         tabBar.classList.add('tab-bar-hidden'); // scrolling down
+                        if (fab) fab.classList.add('fab-hidden');
                     } else {
                         tabBar.classList.remove('tab-bar-hidden'); // scrolling up
+                        if (fab) fab.classList.remove('fab-hidden');
                     }
                     lastScrollTop = current;
                 }
                 clearTimeout(hideTimeout);
-                hideTimeout = setTimeout(() => tabBar.classList.remove('tab-bar-hidden'), 600); // settle -> show
+                hideTimeout = setTimeout(() => {
+                    tabBar.classList.remove('tab-bar-hidden');
+                    if (fab) fab.classList.remove('fab-hidden');
+                }, 600); // settle -> show
             }, { passive: true });
         })();
 
