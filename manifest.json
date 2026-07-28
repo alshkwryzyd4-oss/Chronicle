@@ -1,11 +1,33 @@
 {
+  "id": "/",
   "name": "Chronicle | Personal Media Archive",
   "short_name": "Chronicle",
   "description": "A personal archive to track every anime, movie, animated film, series, and game you experience.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#17161a",
   "theme_color": "#17161a",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["entertainment", "lifestyle", "productivity"],
+  "screenshots": [
+    {
+      "src": "screenshot-narrow-1.png",
+      "sizes": "720x1487",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Movies library view"
+    },
+    {
+      "src": "screenshot-narrow-2.png",
+      "sizes": "720x1487",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Achievements view"
+    }
+  ],
   "icons": [
     {
       "src": "icon-192.png",
@@ -20,13 +42,13 @@
       "purpose": "any"
     },
     {
-      "src": "icon-192.png",
+      "src": "icon-maskable-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
