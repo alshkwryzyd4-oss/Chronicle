@@ -381,6 +381,55 @@
         .sidebar-account .acc-info { flex:1; overflow:hidden; }
         .sidebar-account .acc-name { font-size:0.85rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .sidebar-account .acc-email { font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+        /* ---- Custom select (replaces native browser dropdown) ---- */
+        .cs-wrapper { position: relative; width: 100%; }
+        .cs-native { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+        .cs-trigger {
+            width: 100%; padding: 0.75rem; border-radius: var(--radius); background-color: var(--bg);
+            border: 1px solid var(--border); color: var(--text); margin-bottom: 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+            font-family: inherit; font-size: 1rem; transition: border-color var(--transition);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .cs-trigger:focus, .cs-trigger.cs-open { border-color: var(--primary); }
+        .cs-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cs-chevron { flex-shrink: 0; width: 18px; height: 18px; transition: transform var(--transition); opacity: 0.7; }
+        .cs-trigger.cs-open .cs-chevron { transform: rotate(180deg); }
+
+        .cs-backdrop {
+            position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.45);
+            animation: csFadeIn 0.15s ease;
+        }
+        @keyframes csFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .cs-panel {
+            position: fixed; z-index: 301; background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            max-height: 60vh; overflow-y: auto; animation: csPanelIn 0.15s ease;
+        }
+        @keyframes csPanelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .cs-option {
+            display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+            padding: 0.95rem 1.1rem; cursor: pointer; color: var(--text); font-size: 1rem;
+            border-bottom: 1px solid var(--border); transition: background-color 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .cs-option:last-child { border-bottom: none; }
+        .cs-option:hover, .cs-option:active { background-color: var(--surface-hover); }
+        .cs-option[data-disabled="true"] { color: var(--text-muted); cursor: default; opacity: 0.6; }
+        .cs-option-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .cs-radio {
+            flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--text-muted);
+            position: relative; transition: border-color var(--transition);
+        }
+        .cs-option.cs-selected .cs-radio { border-color: var(--primary); }
+        .cs-option.cs-selected .cs-radio::after {
+            content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--primary);
+        }
+        .cs-option[data-disabled="true"] .cs-radio { display: none; }
     </style>
 
     <div id="appContainer" class="hidden">
@@ -2717,6 +2766,133 @@
                 clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => tabBar.classList.remove('tab-bar-hidden'), 600); // settle -> show
             }, { passive: true });
+        })();
+
+        /* ---- Custom Select Engine: converts every native <select> into a styled, in-app dropdown ---- */
+        (function() {
+            let openPanel = null, openBackdrop = null, openTrigger = null;
+
+            function closeOpenPanel() {
+                if (openPanel) { openPanel.remove(); openPanel = null; }
+                if (openBackdrop) { openBackdrop.remove(); openBackdrop = null; }
+                if (openTrigger) { openTrigger.classList.remove('cs-open'); openTrigger = null; }
+            }
+
+            function buildPanel(select, trigger) {
+                const panel = document.createElement('div');
+                panel.className = 'cs-panel';
+                const rect = trigger.getBoundingClientRect();
+                panel.style.left = rect.left + 'px';
+                panel.style.top = (rect.bottom + 6) + 'px';
+                panel.style.width = rect.width + 'px';
+
+                Array.from(select.options).forEach(opt => {
+                    const row = document.createElement('div');
+                    row.className = 'cs-option' + (opt.selected ? ' cs-selected' : '');
+                    if (opt.disabled) row.setAttribute('data-disabled', 'true');
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'cs-option-label';
+                    labelSpan.textContent = opt.textContent;
+                    const radioSpan = document.createElement('span');
+                    radioSpan.className = 'cs-radio';
+                    row.appendChild(labelSpan);
+                    row.appendChild(radioSpan);
+                    if (!opt.disabled) {
+                        row.addEventListener('click', () => {
+                            select.value = opt.value;
+                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                            closeOpenPanel();
+                        });
+                    }
+                    panel.appendChild(row);
+                });
+                return panel;
+            }
+
+            function openSelectPanel(select, trigger) {
+                closeOpenPanel();
+                const backdrop = document.createElement('div');
+                backdrop.className = 'cs-backdrop';
+                backdrop.addEventListener('click', closeOpenPanel);
+                document.body.appendChild(backdrop);
+
+                const panel = buildPanel(select, trigger);
+                document.body.appendChild(panel);
+
+                const panelRect = panel.getBoundingClientRect();
+                if (panelRect.bottom > window.innerHeight - 10) {
+                    const rect = trigger.getBoundingClientRect();
+                    panel.style.top = Math.max(10, rect.top - panelRect.height - 6) + 'px';
+                }
+                if (panelRect.right > window.innerWidth - 10) {
+                    panel.style.left = Math.max(10, window.innerWidth - panelRect.width - 10) + 'px';
+                }
+
+                trigger.classList.add('cs-open');
+                openPanel = panel; openBackdrop = backdrop; openTrigger = trigger;
+            }
+
+            function enhanceSelect(select) {
+                if (select.dataset.csEnhanced) return;
+                select.dataset.csEnhanced = 'true';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'cs-wrapper';
+                select.parentNode.insertBefore(wrapper, select);
+                select.classList.add('cs-native');
+                wrapper.appendChild(select);
+
+                const trigger = document.createElement('div');
+                trigger.className = 'cs-trigger';
+                trigger.setAttribute('tabindex', '0');
+                trigger.setAttribute('role', 'button');
+                const labelEl = document.createElement('span');
+                labelEl.className = 'cs-trigger-label';
+                trigger.appendChild(labelEl);
+                trigger.insertAdjacentHTML('beforeend', '<svg class="cs-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 21"></polyline></svg>');
+                wrapper.appendChild(trigger);
+
+                function syncLabel() {
+                    const sel = select.options[select.selectedIndex];
+                    labelEl.textContent = sel ? sel.textContent : '';
+                }
+                syncLabel();
+                select.addEventListener('change', syncLabel);
+
+                trigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (select.disabled) return;
+                    if (openTrigger === trigger) { closeOpenPanel(); return; }
+                    openSelectPanel(select, trigger);
+                });
+                trigger.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger.click(); }
+                    if (e.key === 'Escape') closeOpenPanel();
+                });
+            }
+
+            function enhanceAll(root) {
+                (root || document).querySelectorAll('select:not(.cs-native)').forEach(enhanceSelect);
+            }
+
+            // The app re-renders large chunks of the page via innerHTML, which would otherwise
+            // wipe out our custom dropdowns and bring back native <select> elements. Watch for
+            // that and re-apply automatically.
+            const csObserver = new MutationObserver((mutations) => {
+                let shouldScan = false;
+                for (const m of mutations) {
+                    if (m.addedNodes && m.addedNodes.length) { shouldScan = true; break; }
+                }
+                if (shouldScan) enhanceAll(document);
+                if (openTrigger && !document.body.contains(openTrigger)) closeOpenPanel();
+            });
+            csObserver.observe(document.body, { childList: true, subtree: true });
+
+            window.addEventListener('resize', closeOpenPanel);
+            window.addEventListener('scroll', closeOpenPanel, true);
+
+            document.addEventListener('DOMContentLoaded', () => enhanceAll(document));
+            if (document.readyState !== 'loading') enhanceAll(document);
         })();
 
         // Boot
