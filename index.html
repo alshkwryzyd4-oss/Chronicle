@@ -1658,7 +1658,11 @@
             } catch (e) {
                 if (thisRequestId !== searchRequestId) return;
                 console.error('Live search failed', e);
-                box.innerHTML = `<div class="search-result-status">${state.settings.lang === 'ar' ? 'تعذر البحث الآن - يمكنك الإضافة يدويًا' : "Search unavailable right now - you can still add it manually"}</div>`;
+                box.innerHTML = `
+                    <div class="search-result-status">
+                        ${state.settings.lang === 'ar' ? 'تعذر البحث الآن - يمكنك الإضافة يدويًا' : "Search unavailable right now - you can still add it manually"}
+                        <div style="color:var(--danger); font-size:0.7rem; margin-top:4px; word-break:break-word;">${(e && e.message) || e}</div>
+                    </div>`;
             }
         }
 
