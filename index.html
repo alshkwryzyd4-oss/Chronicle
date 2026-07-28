@@ -86,7 +86,7 @@
         /* --- BASE STYLES --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         * { -webkit-tap-highlight-color: transparent; tap-highlight-color: transparent; }
-        body { font-family: var(--font-family); background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; height: 100vh; transition: background-color var(--transition), color var(--transition); -webkit-touch-callout: none; }
+        body { font-family: var(--font-family); background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; height: 100vh; height: 100dvh; transition: background-color var(--transition), color var(--transition); -webkit-touch-callout: none; }
         img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
         input, textarea, select { -webkit-user-select: auto; user-select: auto; -webkit-touch-callout: default; }
         h1, h2, h3, h4, .brand, .brand-lg { font-family: var(--font-display); letter-spacing: -0.01em; }
@@ -136,7 +136,7 @@
         .input:focus { border-color: var(--primary); }
         
         .card { background-color: var(--surface); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); }
-        .ai-chat-card { max-height: calc(100vh - 160px); }
+        .ai-chat-card { max-height: calc(100vh - 160px); max-height: calc(100dvh - 160px); }
         .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.25rem; }
         .ai-bubble { max-width: 80%; padding: 0.6rem 0.85rem; border-radius: 14px; font-size: 0.92rem; line-height: 1.45; white-space: pre-wrap; }
         .ai-bubble-bot { align-self: flex-start; background-color: var(--bg); border: 1px solid var(--border); border-start-start-radius: 4px; }
@@ -188,7 +188,8 @@
         }
 
         .bottom-tab-bar {
-            position: fixed; bottom: 0; inset-inline: 0; height: 64px; z-index: 60;
+            position: fixed; bottom: 0; inset-inline: 0; height: calc(64px + env(safe-area-inset-bottom, 0px)); z-index: 60;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
             background: var(--surface); border-top: 1px solid var(--border);
             display: flex; box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
             transform: translateY(0); transition: transform 0.28s ease;
@@ -216,6 +217,7 @@
         .ai-fab:active { transform: scale(0.92); }
         .ai-fab.active { box-shadow: 0 0 0 3px var(--primary) inset, 0 4px 14px rgba(0,0,0,0.35); }
         .ai-fab.fab-hidden { transform: translateY(140%); opacity: 0; pointer-events: none; }
+        body:has(.modal-overlay.active) .ai-fab { transform: translateY(140%); opacity: 0; pointer-events: none; }
         .header { height: 60px; background-color: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; justify-content: space-between; }
         .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; padding-bottom: 76px; transition: transform 0.3s ease; }
 
@@ -336,8 +338,8 @@
         @keyframes heartbeat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 
         /* --- SIGNATURE MOTION: view transitions, active nav, cards, toast --- */
-        @keyframes viewFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #viewContainer.view-fade { animation: viewFadeIn 0.4s cubic-bezier(.2,.8,.2,1); }
+        @keyframes viewFadeIn { from { opacity: 0; transform: translateY(18px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        #viewContainer.view-fade { animation: viewFadeIn 0.35s cubic-bezier(.2,.8,.2,1); }
         .nav-item.active { animation: navActivate 0.3s ease; }
         @keyframes navActivate { from { padding-inline-start: 1rem; } to { padding-inline-start: 1.5rem; } }
         .media-card { transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition); }
@@ -700,8 +702,11 @@
                 ai: "AI", aiTitle: "AI Assistant", aiPlaceholder: "e.g. Add Iron Man 1, 2, 3 and change the theme to ocean...",
                 aiSend: "Send", aiThinking: "Thinking...", aiClear: "Clear chat",
                 aiWelcome: "Hi! Tell me what to add or change - e.g. \"Add Iron Man 1&2&3, Avengers 1&2&3 and Wakanda as movies\" or \"switch to the ocean theme\". I can handle several requests at once.",
-                aiKeyMissing: "No Gemini API key is set. Add one in the GEMINI_API_KEY constant in the code.",
-                aiError: "Something went wrong talking to Gemini.", aiItemsAdded: "Added to your library", aiThemeChanged: "Theme changed"
+                aiKeyMissing: "No Gemini API key is set. Go to Settings → Gemini API Key, add your free key from Google AI Studio, and try again.",
+                aiError: "Something went wrong talking to Gemini.", aiItemsAdded: "Added to your library", aiThemeChanged: "Theme changed",
+                geminiKeyLabel: "Gemini API Key", geminiKeyDesc: "Needed for the AI Assistant tab. Get a free key at aistudio.google.com/apikey — it's stored only on this device and is never uploaded anywhere.",
+                geminiKeyPlaceholder: "Paste your Gemini API key here", geminiKeySave: "Save key", geminiKeyClear: "Remove key",
+                geminiKeySaved: "Gemini API key saved.", geminiKeyRemoved: "Gemini API key removed.", geminiKeySet: "Key set ✓"
             },
             ar: {
                 appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
@@ -733,8 +738,11 @@
                 ai: "الذكاء الاصطناعي", aiTitle: "المساعد الذكي", aiPlaceholder: "مثال: أضف Iron Man 1&2&3 وغيّر الثيم إلى المحيط...",
                 aiSend: "إرسال", aiThinking: "جارٍ التفكير...", aiClear: "مسح المحادثة",
                 aiWelcome: "أهلًا! أخبرني بما تريد إضافته أو تغييره - مثلاً \"أضف Iron Man 1&2&3 وAvengers 1&2&3 وWakanda كأفلام\" أو \"غيّر الثيم إلى المحيط\". يمكنني تنفيذ عدة طلبات دفعة واحدة.",
-                aiKeyMissing: "لم يتم إعداد مفتاح Gemini API. أضف المفتاح في المتغير GEMINI_API_KEY داخل الكود.",
-                aiError: "حدث خطأ أثناء التواصل مع Gemini.", aiItemsAdded: "تمت الإضافة لمكتبتك", aiThemeChanged: "تم تغيير الثيم"
+                aiKeyMissing: "لم يتم إعداد مفتاح Gemini API. اذهب إلى الإعدادات ← مفتاح Gemini API، أضف مفتاحك المجاني من Google AI Studio، ثم أعد المحاولة.",
+                aiError: "حدث خطأ أثناء التواصل مع Gemini.", aiItemsAdded: "تمت الإضافة لمكتبتك", aiThemeChanged: "تم تغيير الثيم",
+                geminiKeyLabel: "مفتاح Gemini API", geminiKeyDesc: "مطلوب لتبويب المساعد الذكي. احصل على مفتاح مجاني من aistudio.google.com/apikey — يُخزَّن فقط على هذا الجهاز ولا يُرفع لأي مكان أبدًا.",
+                geminiKeyPlaceholder: "ألصق مفتاح Gemini API هنا", geminiKeySave: "حفظ المفتاح", geminiKeyClear: "إزالة المفتاح",
+                geminiKeySaved: "تم حفظ مفتاح Gemini API.", geminiKeyRemoved: "تمت إزالة مفتاح Gemini API.", geminiKeySet: "المفتاح مُعدّ ✓"
             }
         };
 
@@ -830,8 +838,24 @@
         const TMDB_API_KEY = "72f7f751d47757575230f64d2645359e";   // used for Movies and TV Series search
         const RAWG_API_KEY = "PUT_YOUR_RAWG_API_KEY_HERE";   // used for Video Games search
         // Gemini API key - used by the "AI" tab to add multiple items at once and change the theme via natural language.
-        // Get a free key at https://aistudio.google.com/apikey
-        const GEMINI_API_KEY = "AQ.Ab8RN6L7cJ30R2GV205bFuylPiV2lk8idQ_zxNzwUPhtUauTuQ";
+        // Each user enters and stores their OWN key locally (Settings page → "Gemini API Key"). It lives only
+        // in that browser's localStorage and is never bundled into the source or synced anywhere, so it can't
+        // leak from the public repo/site the way a hardcoded key would, and can't rack up charges on your account.
+        // Users get a free key at https://aistudio.google.com/apikey
+        const GEMINI_KEY_STORAGE = 'chronicle_gemini_api_key';
+        function getGeminiKey() { return (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim(); }
+        function setGeminiKey(key) { localStorage.setItem(GEMINI_KEY_STORAGE, (key || '').trim()); }
+        function saveGeminiKeyFromSettings() {
+            const input = document.getElementById('geminiKeyInput');
+            setGeminiKey(input ? input.value : '');
+            showToast(t('geminiKeySaved'));
+            navigate('settings');
+        }
+        function clearGeminiKeyFromSettings() {
+            setGeminiKey('');
+            showToast(t('geminiKeyRemoved'));
+            navigate('settings');
+        }
         const GEMINI_MODEL = "gemini-2.5-flash";
         const ACCOUNTS_KEY = "chronicle_accounts";
         const LAST_EMAIL_KEY = "chronicle_last_email";
@@ -1383,7 +1407,12 @@
 
             document.querySelectorAll('.bottom-tab-btn').forEach(el => el.classList.toggle('active', el.getAttribute('data-view') === view));
             const aiFab = document.getElementById('aiFab');
-            if (aiFab) aiFab.classList.toggle('active', view === 'ai');
+            if (aiFab) {
+                aiFab.classList.toggle('active', view === 'ai');
+                // Hide the floating AI button on the AI chat page (it would just sit on top of
+                // the conversation) and on Settings (not relevant there).
+                aiFab.classList.toggle('fab-hidden', view === 'ai' || view === 'settings');
+            }
 
             const container = document.getElementById('viewContainer');
             container.innerHTML = ''; // clear
@@ -1938,6 +1967,18 @@
                         </select>
 
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+
+                        <label>${t('geminiKeyLabel')} ${getGeminiKey() ? `<span style="color:var(--success); font-weight:600;">— ${t('geminiKeySet')}</span>` : ''}</label>
+                        <p style="color:var(--text-muted); font-size:0.8rem; margin-top:-0.5rem;">${t('geminiKeyDesc')}</p>
+                        <div class="flex gap-2">
+                            <input type="password" id="geminiKeyInput" class="input" style="margin-bottom:0;" placeholder="${t('geminiKeyPlaceholder')}" value="${getGeminiKey()}">
+                        </div>
+                        <div class="flex gap-4">
+                            <button class="btn btn-primary" style="flex:1" onclick="saveGeminiKeyFromSettings()">${t('geminiKeySave')}</button>
+                            <button class="btn btn-surface" style="flex:1" onclick="clearGeminiKeyFromSettings()">${t('geminiKeyClear')}</button>
+                        </div>
+
+                        <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
                         
                         <div class="flex gap-4">
                             <button class="btn btn-primary" style="flex:1" onclick="exportData()" data-i18n="exportData">${t('exportData')}</button>
@@ -2052,7 +2093,7 @@
 
         function renderAI(container) {
             container.innerHTML = `
-                <div class="card ai-chat-card" style="max-width:700px; margin:0 auto; display:flex; flex-direction:column; height:calc(100vh - 160px);">
+                <div class="card ai-chat-card" style="max-width:700px; margin:0 auto; display:flex; flex-direction:column; height:calc(100vh - 160px); height:calc(100dvh - 160px);">
                     <div class="flex justify-between items-center" style="margin-bottom:0.75rem;">
                         <h3 style="font-family:var(--font-display);">${t('aiTitle')}</h3>
                         <button class="btn btn-surface" style="padding:0.35rem 0.7rem; font-size:0.8rem;" onclick="clearAIChat()">${t('aiClear')}</button>
@@ -2104,7 +2145,7 @@
             const text = input.value.trim();
             if (!text) return;
 
-            if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('PUT_YOUR_GEMINI_API_KEY_HERE')) {
+            if (!getGeminiKey()) {
                 aiChatLog.push({ role: 'user', text });
                 aiChatLog.push({ role: 'bot', text: t('aiKeyMissing') });
                 renderAIMessages();
@@ -2167,7 +2208,7 @@ Rules:
 
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': getGeminiKey() },
                 body: JSON.stringify(body)
             });
 
@@ -2983,7 +3024,10 @@ Rules:
             saveState();
         }
 
-        // Bottom tab bar: hide on scroll down, reveal on scroll up or when scrolling stops
+        // Bottom tab bar: hides while scrolling down (or when near the bottom of a list) so
+        // the last row of item names isn't covered, and reappears on scroll-up. Stays hidden
+        // longer after scrolling stops than before, since reappearing too quickly kept covering
+        // bottom content again.
         (function setupTabBarAutoHide() {
             let lastScrollTop = 0;
             let hideTimeout = null;
@@ -2994,21 +3038,23 @@ Rules:
             scrollEl.addEventListener('scroll', () => {
                 const current = scrollEl.scrollTop;
                 const delta = current - lastScrollTop;
-                if (Math.abs(delta) > 4) {
-                    if (delta > 0 && current > 40) {
-                        tabBar.classList.add('tab-bar-hidden'); // scrolling down
-                        if (fab) fab.classList.add('fab-hidden');
-                    } else {
-                        tabBar.classList.remove('tab-bar-hidden'); // scrolling up
-                        if (fab) fab.classList.remove('fab-hidden');
-                    }
-                    lastScrollTop = current;
+                const nearBottom = current + scrollEl.clientHeight >= scrollEl.scrollHeight - 24;
+                const fabAllowed = currentView !== 'ai' && currentView !== 'settings';
+                if (nearBottom || (delta > 0 && current > 40)) {
+                    tabBar.classList.add('tab-bar-hidden'); // scrolling down or reached the bottom
+                    if (fab && fabAllowed) fab.classList.add('fab-hidden');
+                } else if (delta < -4) {
+                    tabBar.classList.remove('tab-bar-hidden'); // scrolling up
+                    if (fab && fabAllowed) fab.classList.remove('fab-hidden');
                 }
+                lastScrollTop = current;
                 clearTimeout(hideTimeout);
                 hideTimeout = setTimeout(() => {
-                    tabBar.classList.remove('tab-bar-hidden');
-                    if (fab) fab.classList.remove('fab-hidden');
-                }, 600); // settle -> show
+                    if (!nearBottom) {
+                        tabBar.classList.remove('tab-bar-hidden');
+                        if (fab && fabAllowed) fab.classList.remove('fab-hidden');
+                    }
+                }, 2500); // stay hidden for longer once scrolling settles
             }, { passive: true });
         })();
 
