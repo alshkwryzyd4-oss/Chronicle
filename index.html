@@ -1709,7 +1709,9 @@
                 year: (type === 'tv' ? r.first_air_date : r.release_date)?.slice(0, 4) || '',
                 extra: r.vote_average ? '★ ' + r.vote_average.toFixed(1) : '',
                 cover: r.poster_path ? `https://image.tmdb.org/t/p/w342${r.poster_path}` : '',
-                rating: r.vote_average ? Math.round(r.vote_average) : ''
+                rating: r.vote_average ? Math.round(r.vote_average) : '',
+                tmdbId: r.id,
+                tmdbType: endpoint
             }));
         }
 
@@ -1730,7 +1732,23 @@
             }));
         }
 
-        function applySearchResult(idx) {
+        // The TMDb search endpoint doesn't include runtime/season/episode counts - those only
+        // come from the details endpoint, so we fetch them once a specific result is picked.
+        async function fetchTMDbDetails(id, type) {
+            const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`);
+            if (!res.ok) throw new Error('TMDb details request failed: ' + res.status);
+            const d = await res.json();
+            if (type === 'tv') {
+                return {
+                    seasons: d.number_of_seasons || '',
+                    episodes: d.number_of_episodes || '',
+                    duration: (d.episode_run_time && d.episode_run_time[0]) || ''
+                };
+            }
+            return { duration: d.runtime || '' };
+        }
+
+        async function applySearchResult(idx) {
             const r = (window.__lastSearchResults || [])[idx];
             if (!r) return;
             document.getElementById('itemTitle').value = r.title;
@@ -1762,6 +1780,25 @@
             }
 
             document.getElementById('searchResultsBox').classList.add('hidden');
+
+            // Movies/Series from TMDb: fetch the runtime/season/episode counts in the background
+            // so the Insight page can calculate time spent - this arrives a moment after the
+            // rest of the fields since it needs a second request.
+            if (r.tmdbId && (cat === 'movie' || cat === 'series' || cat === 'animemovie')) {
+                try {
+                    const details = await fetchTMDbDetails(r.tmdbId, r.tmdbType);
+                    if (details.duration && document.getElementById('itemDuration')) {
+                        document.getElementById('itemDuration').value = details.duration;
+                    }
+                    if (cat === 'series') {
+                        if (details.seasons && document.getElementById('itemSeasons')) document.getElementById('itemSeasons').value = details.seasons;
+                        if (details.episodes && document.getElementById('itemEpisodes')) document.getElementById('itemEpisodes').value = details.episodes;
+                    }
+                } catch (e) {
+                    console.error('Could not fetch TMDb details (duration/episodes)', e);
+                    // Non-fatal - the item can still be saved, just fill duration/episodes manually
+                }
+            }
         }
 
         function clearAutoCover() {
