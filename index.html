@@ -85,7 +85,10 @@
 
         /* --- BASE STYLES --- */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: var(--font-family); background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; height: 100vh; transition: background-color var(--transition), color var(--transition); }
+        * { -webkit-tap-highlight-color: transparent; tap-highlight-color: transparent; }
+        body { font-family: var(--font-family); background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; height: 100vh; transition: background-color var(--transition), color var(--transition); -webkit-touch-callout: none; }
+        img { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; -webkit-user-drag: none; }
+        input, textarea, select { -webkit-user-select: auto; user-select: auto; -webkit-touch-callout: default; }
         h1, h2, h3, h4, .brand, .brand-lg { font-family: var(--font-display); letter-spacing: -0.01em; }
         #headerTitle { font-weight: 600; }
         a { text-decoration: none; color: inherit; }
@@ -148,12 +151,13 @@
         
         /* --- MAIN CONTENT --- */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .content-area { padding-bottom: 76px; }
         .bottom-tab-bar {
             position: fixed; bottom: 0; inset-inline: 0; height: 64px; z-index: 60;
             background: var(--surface); border-top: 1px solid var(--border);
             display: flex; box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
+            transform: translateY(0); transition: transform 0.28s ease;
         }
+        .bottom-tab-bar.tab-bar-hidden { transform: translateY(100%); }
         .bottom-tab-btn {
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
             gap: 3px; color: var(--text-muted); font-size: 0.62rem; font-weight: 600;
@@ -164,7 +168,7 @@
         .bottom-tab-btn.active svg { transform: translateY(-2px) scale(1.08); }
         .bottom-tab-btn:active svg { transform: scale(0.9); }
         .header { height: 60px; background-color: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; justify-content: space-between; }
-        .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; }
+        .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; padding-bottom: 76px; transition: transform 0.3s ease; }
 
         /* --- MODALS --- */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity var(--transition); backdrop-filter: blur(4px); }
@@ -193,6 +197,28 @@
         .contact-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .insight-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
         .insight-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.25); }
+        .lightbox-overlay {
+            position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.92);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+        }
+        .lightbox-overlay.active { opacity: 1; pointer-events: auto; }
+        .lightbox-overlay img { max-width: 92vw; max-height: 88vh; object-fit: contain; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); transform: scale(0.94); transition: transform 0.25s ease; }
+        .lightbox-overlay.active img { transform: scale(1); }
+        .lightbox-close { position: absolute; top: 1.25rem; inset-inline-end: 1.25rem; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.12); color: #fff; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+        .lightbox-hint { position: absolute; margin-top: -36px; margin-inline-start: 164px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; display: flex; align-items: center; justify-content: center; }
+        .search-results-dropdown {
+            position: absolute; top: 100%; inset-inline: 0; z-index: 40; margin-top: 4px;
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            max-height: 280px; overflow-y: auto; box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+        }
+        .search-result-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; cursor: pointer; border-bottom: 1px solid var(--border); }
+        .search-result-row:last-child { border-bottom: none; }
+        .search-result-row:hover { background: var(--surface-hover); }
+        .search-result-row img { width: 34px; height: 50px; object-fit: cover; border-radius: 4px; background: var(--bg); flex-shrink: 0; }
+        .search-result-row .sr-title { font-size: 0.85rem; font-weight: 600; }
+        .search-result-row .sr-meta { font-size: 0.72rem; color: var(--text-muted); }
+        .search-result-status { padding: 0.6rem; font-size: 0.8rem; color: var(--text-muted); text-align: center; }
         .ach-icon { font-size: 2rem; }
 
         .timeline-item { display: flex; gap: 1rem; margin-bottom: 1rem; }
@@ -364,6 +390,12 @@
     </div><!-- /#appContainer -->
 
     <!-- Modals -->
+
+    <!-- Full-screen image viewer (Facebook-style lightbox) -->
+    <div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+        <img id="lightboxImg" src="" alt="" oncontextmenu="return false">
+        <button class="lightbox-close" onclick="closeLightbox()" aria-label="Close">✕</button>
+    </div>
     <div class="modal-overlay" id="addModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -373,14 +405,18 @@
             <div class="modal-body">
                 <form id="addForm" class="flex-col gap-4">
                     <input type="hidden" id="itemId">
-                    
+                    <input type="hidden" id="itemAutoCover">
+
                     <label data-i18n="title">Title *</label>
-                    <input type="text" id="itemTitle" class="input" required>
-                    
+                    <div style="position: relative;">
+                        <input type="text" id="itemTitle" class="input" required autocomplete="off" oninput="handleTitleSearchInput()">
+                        <div id="searchResultsBox" class="search-results-dropdown hidden"></div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label data-i18n="category">Category</label>
-                            <select id="itemCategory" class="input" onchange="toggleCategoryFields()">
+                            <select id="itemCategory" class="input" onchange="toggleCategoryFields(); handleTitleSearchInput();">
                                 <option value="anime">Anime</option>
                                 <option value="animemovie" data-i18n="animeMovie">Anime Movie</option>
                                 <option value="movie">Movie</option>
@@ -414,7 +450,12 @@
                     </div>
 
                     <label data-i18n="coverImage">Cover Image (Optional)</label>
-                    <input type="file" id="itemCover" class="input" accept="image/*">
+                    <input type="file" id="itemCover" class="input" accept="image/*" onchange="clearAutoCover()">
+                    <div id="autoCoverPreviewWrap" class="hidden" style="display:flex; align-items:center; gap:0.6rem; margin-top:-0.5rem;">
+                        <img id="autoCoverPreview" src="" style="width:40px; height:60px; object-fit:cover; border-radius:4px;">
+                        <span style="font-size:0.78rem; color:var(--text-muted)" id="autoCoverLabel"></span>
+                        <button type="button" class="btn btn-surface" style="padding:0.2rem 0.6rem; font-size:0.75rem;" onclick="clearAutoCover()">✕</button>
+                    </div>
 
                     <label data-i18n="notes">Personal Notes</label>
                     <textarea id="itemNotes" class="input" rows="3"></textarea>
@@ -438,7 +479,10 @@
             </div>
             <div class="modal-body flex-col gap-4">
                 <div class="flex gap-6" style="flex-wrap: wrap;">
-                    <img id="detCover" class="card" style="width: 200px; aspect-ratio: 2/3; object-fit: cover;" src="" alt="Cover">
+                    <img id="detCover" class="card" style="width: 200px; aspect-ratio: 2/3; object-fit: cover; cursor: pointer;" src="" alt="Cover" onclick="event.stopPropagation(); openLightbox(this.src)" oncontextmenu="return false">
+                    <button class="lightbox-hint" onclick="event.stopPropagation(); openLightbox(document.getElementById('detCover').src)" aria-label="Expand image">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    </button>
                     <div class="flex-col gap-2" style="flex: 1; min-width: 250px;">
                         <div class="flex gap-2 items-center">
                             <span id="detCategory" class="badge" style="position:static; display:inline-block"></span>
@@ -560,7 +604,13 @@
         const GOOGLE_CLIENT_ID = "758332199660-euui3k1lqp6rtubopkpfouj0ccb515nr.apps.googleusercontent.com";
         const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
         const DRIVE_FILE_NAME = "chronicle_data.json";
-        const APP_VERSION = "2.1.0"; // bump this whenever the app is meaningfully updated
+        const APP_VERSION = "2.2.0"; // bump this whenever the app is meaningfully updated
+
+        // --- LIVE SEARCH API KEYS ---
+        // Jikan (MyAnimeList) needs no key at all - it's used automatically for Anime / Anime Movies.
+        // TMDb and RAWG need a free key from your own account - see the setup guide for how to get one.
+        const TMDB_API_KEY = "PUT_YOUR_TMDB_API_KEY_HERE";   // used for Movies and TV Series search
+        const RAWG_API_KEY = "PUT_YOUR_RAWG_API_KEY_HERE";   // used for Video Games search
         const ACCOUNTS_KEY = "chronicle_accounts";
         const LAST_EMAIL_KEY = "chronicle_last_email";
 
@@ -1545,12 +1595,165 @@
             document.getElementById('itemId').value = '';
             document.getElementById('modalTitle').innerText = t('addNewItem');
             toggleCategoryFields();
+            clearAutoCover();
+            document.getElementById('searchResultsBox').classList.add('hidden');
             document.getElementById('addModal').classList.add('active');
         }
 
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
         }
+
+        function openLightbox(src) {
+            if (!src) return;
+            document.getElementById('lightboxImg').src = src;
+            document.getElementById('lightbox').classList.add('active');
+        }
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // --- LIVE SEARCH (Jikan / TMDb / RAWG) ---
+        let searchDebounceTimer = null;
+        let searchRequestId = 0; // guards against a slow older request overwriting a newer one
+
+        function handleTitleSearchInput() {
+            clearTimeout(searchDebounceTimer);
+            const query = document.getElementById('itemTitle').value.trim();
+            const box = document.getElementById('searchResultsBox');
+            if (query.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+            searchDebounceTimer = setTimeout(() => runLiveSearch(query), 450);
+        }
+
+        async function runLiveSearch(query) {
+            const cat = document.getElementById('itemCategory').value;
+            const box = document.getElementById('searchResultsBox');
+            const thisRequestId = ++searchRequestId;
+            box.classList.remove('hidden');
+            box.innerHTML = `<div class="search-result-status">${state.settings.lang === 'ar' ? 'جارٍ البحث...' : 'Searching...'}</div>`;
+
+            try {
+                let results = [];
+                if (cat === 'anime' || cat === 'animemovie') results = await searchJikan(query);
+                else if (cat === 'movie') results = await searchTMDb(query, 'movie');
+                else if (cat === 'series') results = await searchTMDb(query, 'tv');
+                else if (cat === 'game') results = await searchRAWG(query);
+
+                if (thisRequestId !== searchRequestId) return; // a newer search started - drop this stale result
+
+                if (!results.length) {
+                    box.innerHTML = `<div class="search-result-status">${state.settings.lang === 'ar' ? 'لا توجد نتائج - يمكنك الإضافة يدويًا' : 'No results - you can still add it manually'}</div>`;
+                    return;
+                }
+                box.innerHTML = results.map((r, idx) => `
+                    <div class="search-result-row" onclick="applySearchResult(${idx})">
+                        <img src="${r.cover || ''}" loading="lazy" onerror="this.style.visibility='hidden'">
+                        <div>
+                            <div class="sr-title">${r.title}</div>
+                            <div class="sr-meta">${[r.year, r.extra].filter(Boolean).join(' • ')}</div>
+                        </div>
+                    </div>
+                `).join('');
+                window.__lastSearchResults = results;
+            } catch (e) {
+                if (thisRequestId !== searchRequestId) return;
+                console.error('Live search failed', e);
+                box.innerHTML = `<div class="search-result-status">${state.settings.lang === 'ar' ? 'تعذر البحث الآن - يمكنك الإضافة يدويًا' : "Search unavailable right now - you can still add it manually"}</div>`;
+            }
+        }
+
+        async function searchJikan(query) {
+            const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=6&sfw`);
+            if (!res.ok) throw new Error('Jikan request failed: ' + res.status);
+            const data = await res.json();
+            return (data.data || []).map(a => ({
+                title: a.title_english || a.title,
+                year: a.year || (a.aired?.from ? new Date(a.aired.from).getFullYear() : ''),
+                extra: a.type || '',
+                cover: a.images?.jpg?.image_url || '',
+                rating: a.score ? Math.round(a.score) : '',
+                episodes: a.episodes || '',
+                duration: a.duration ? (parseInt(a.duration) || '') : ''
+            }));
+        }
+
+        async function searchTMDb(query, type) {
+            if (TMDB_API_KEY.includes('PUT_YOUR_TMDB_API_KEY_HERE')) {
+                throw new Error('TMDb API key not configured');
+            }
+            const endpoint = type === 'tv' ? 'tv' : 'movie';
+            const res = await fetch(`https://api.themoviedb.org/3/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`);
+            if (!res.ok) throw new Error('TMDb request failed: ' + res.status);
+            const data = await res.json();
+            return (data.results || []).slice(0, 6).map(r => ({
+                title: type === 'tv' ? r.name : r.title,
+                year: (type === 'tv' ? r.first_air_date : r.release_date)?.slice(0, 4) || '',
+                extra: r.vote_average ? '★ ' + r.vote_average.toFixed(1) : '',
+                cover: r.poster_path ? `https://image.tmdb.org/t/p/w342${r.poster_path}` : '',
+                rating: r.vote_average ? Math.round(r.vote_average) : ''
+            }));
+        }
+
+        async function searchRAWG(query) {
+            if (RAWG_API_KEY.includes('PUT_YOUR_RAWG_API_KEY_HERE')) {
+                throw new Error('RAWG API key not configured');
+            }
+            const res = await fetch(`https://api.rawg.io/api/games?key=${RAWG_API_KEY}&search=${encodeURIComponent(query)}&page_size=6`);
+            if (!res.ok) throw new Error('RAWG request failed: ' + res.status);
+            const data = await res.json();
+            return (data.results || []).map(g => ({
+                title: g.name,
+                year: g.released ? g.released.slice(0, 4) : '',
+                extra: g.rating ? '★ ' + g.rating : '',
+                cover: g.background_image || '',
+                rating: g.rating ? Math.round(g.rating * 2) : '', // RAWG uses a 0-5 scale -> convert to /10
+                platform: (g.platforms || []).slice(0, 3).map(p => p.platform.name).join(', ')
+            }));
+        }
+
+        function applySearchResult(idx) {
+            const r = (window.__lastSearchResults || [])[idx];
+            if (!r) return;
+            document.getElementById('itemTitle').value = r.title;
+            if (r.year) document.getElementById('itemYear').value = r.year;
+            if (r.rating) document.getElementById('itemRating').value = r.rating;
+
+            const cat = document.getElementById('itemCategory').value;
+            if ((cat === 'anime' || cat === 'series') && r.episodes) {
+                const epField = document.getElementById('itemEpisodes');
+                if (epField) epField.value = r.episodes;
+            }
+            if ((cat === 'anime' || cat === 'series') && r.duration) {
+                const durField = document.getElementById('itemDuration');
+                if (durField) durField.value = r.duration;
+            }
+            if (cat === 'game' && r.platform) {
+                const platField = document.getElementById('itemPlatform');
+                if (platField) platField.value = r.platform;
+            }
+
+            if (r.cover) {
+                document.getElementById('itemAutoCover').value = r.cover;
+                document.getElementById('itemCover').value = ''; // an autofilled cover takes the place of a manual upload
+                document.getElementById('autoCoverPreview').src = r.cover;
+                document.getElementById('autoCoverLabel').innerText = state.settings.lang === 'ar'
+                    ? 'غلاف مأخوذ من الإنترنت (يحتاج اتصالاً لعرضه)'
+                    : 'Cover fetched online (needs internet to display)';
+                document.getElementById('autoCoverPreviewWrap').classList.remove('hidden');
+            }
+
+            document.getElementById('searchResultsBox').classList.add('hidden');
+        }
+
+        function clearAutoCover() {
+            document.getElementById('itemAutoCover').value = '';
+            document.getElementById('autoCoverPreviewWrap').classList.add('hidden');
+            document.getElementById('autoCoverPreview').src = '';
+        }
+        // Belt-and-suspenders: block the native long-press "save/copy image" menu on Android too
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.tagName === 'IMG') e.preventDefault();
+        });
 
         function toggleCategoryFields() {
             const cat = document.getElementById('itemCategory').value;
@@ -1596,8 +1799,12 @@
             
             let coverData = '';
             const fileInput = document.getElementById('itemCover');
+            const autoCoverUrl = document.getElementById('itemAutoCover').value;
             if (fileInput.files && fileInput.files[0]) {
-                coverData = await compressImage(fileInput.files[0], 400); // 400px width limit to save space
+                coverData = await readImageFullQuality(fileInput.files[0]);
+            } else if (autoCoverUrl) {
+                // A search result was picked - use its poster URL (loads live from the internet)
+                coverData = autoCoverUrl;
             } else if (document.getElementById('itemId').value) {
                 // Keep existing image on edit if no new one
                 coverData = state.data.find(i => i.id === id).cover;
@@ -1638,23 +1845,17 @@
             navigate(currentView);
         });
 
-        // Image compression helper to avoid localStorage limits
-        function compressImage(file, maxSize) {
-            return new Promise((resolve) => {
+        // Reads the uploaded image at its full original resolution/quality - no resizing,
+        // no re-encoding. The cover is displayed cropped via CSS (object-fit: cover) so it
+        // still fits the card nicely without ever touching the source pixels.
+        // Note: this does mean each photo takes its real file size in storage (both the
+        // local on-device cache and your Google Drive backup), so a library with many
+        // large, uncompressed photos will use noticeably more space than before.
+        function readImageFullQuality(file) {
+            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let w = img.width, h = img.height;
-                        if(w > h && w > maxSize) { h *= maxSize/w; w = maxSize; }
-                        else if(h > maxSize) { w *= maxSize/h; h = maxSize; }
-                        canvas.width = w; canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', 0.6)); // 60% quality jpeg
-                    };
-                    img.src = e.target.result;
-                };
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => reject(reader.error);
                 reader.readAsDataURL(file);
             });
         }
@@ -1869,6 +2070,29 @@
             addItems(series, 'series');
             saveState();
         }
+
+        // Bottom tab bar: hide on scroll down, reveal on scroll up or when scrolling stops
+        (function setupTabBarAutoHide() {
+            let lastScrollTop = 0;
+            let hideTimeout = null;
+            const scrollEl = document.getElementById('viewContainer');
+            const tabBar = document.getElementById('bottomTabBar');
+            if (!scrollEl || !tabBar) return;
+            scrollEl.addEventListener('scroll', () => {
+                const current = scrollEl.scrollTop;
+                const delta = current - lastScrollTop;
+                if (Math.abs(delta) > 4) {
+                    if (delta > 0 && current > 40) {
+                        tabBar.classList.add('tab-bar-hidden'); // scrolling down
+                    } else {
+                        tabBar.classList.remove('tab-bar-hidden'); // scrolling up
+                    }
+                    lastScrollTop = current;
+                }
+                clearTimeout(hideTimeout);
+                hideTimeout = setTimeout(() => tabBar.classList.remove('tab-bar-hidden'), 600); // settle -> show
+            }, { passive: true });
+        })();
 
         // Boot
         document.addEventListener('DOMContentLoaded', boot);
