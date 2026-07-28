@@ -228,8 +228,33 @@
         .timeline-content { background: var(--surface); padding: 1rem; border-radius: var(--radius); flex: 1; border: 1px solid var(--border); border-inline-start: 4px solid var(--primary); }
 
         .rank-list { display: flex; flex-direction: column; gap: 0.5rem; }
-        .rank-item { padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; gap: 1rem; cursor: grab; }
-        .rank-number { font-size: 1.5rem; font-weight: bold; color: var(--primary); width: 30px; }
+        .rank-item { padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; gap: 1rem; cursor: grab; position: relative; overflow: hidden; transition: transform 0.2s ease; }
+        .rank-item[draggable="true"]:active { cursor: grabbing; }
+        .rank-number { font-size: 1.5rem; font-weight: bold; color: var(--primary); width: 30px; flex-shrink: 0; text-align: center; }
+
+        .top10-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .top10-tab-btn { padding: 0.55rem 1.1rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.4rem; }
+        .top10-tab-btn:hover { border-color: var(--primary); color: var(--text); }
+        .top10-tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+        .rank-item.rank-gold { background: linear-gradient(120deg, rgba(255,215,0,0.16), var(--surface) 55%); border: 1px solid #FFD700; box-shadow: 0 4px 20px rgba(255,215,0,0.22); animation: rankGoldGlow 3s ease-in-out infinite; }
+        .rank-item.rank-gold .rank-number { color: #FFD700; font-size: 2.1rem; text-shadow: 0 0 12px rgba(255,215,0,0.65); }
+        .rank-item.rank-gold .media-title { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; background: linear-gradient(90deg,#a9790a,#FFD700 40%,#fff6c8 60%,#FFD700); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: rankShine 4s linear infinite; }
+        @keyframes rankGoldGlow { 0%, 100% { box-shadow: 0 4px 20px rgba(255,215,0,0.22); } 50% { box-shadow: 0 4px 28px rgba(255,215,0,0.42); } }
+        @keyframes rankShine { to { background-position: 200% center; } }
+
+        .rank-item.rank-silver { background: linear-gradient(120deg, rgba(200,200,210,0.16), var(--surface) 55%); border: 1px solid #C7CBD1; box-shadow: 0 4px 16px rgba(199,203,209,0.18); }
+        .rank-item.rank-silver .rank-number { color: #C7CBD1; font-size: 1.85rem; text-shadow: 0 0 8px rgba(199,203,209,0.5); }
+        .rank-item.rank-silver .media-title { font-weight: 700; color: #dfe2e6; }
+
+        .rank-item.rank-bronze { background: linear-gradient(120deg, rgba(205,127,50,0.16), var(--surface) 55%); border: 1px solid #CD7F32; box-shadow: 0 4px 14px rgba(205,127,50,0.16); }
+        .rank-item.rank-bronze .rank-number { color: #CD7F32; font-size: 1.7rem; text-shadow: 0 0 8px rgba(205,127,50,0.45); }
+        .rank-item.rank-bronze .media-title { font-weight: 600; color: #e3b98e; }
+
+        .top10-picker-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; }
+        .top10-picker-item:hover { background: var(--surface-hover); border-color: var(--primary); }
+        .top10-picker-item.already-added { opacity: 0.45; cursor: default; }
+        .top10-empty-hint { text-align: center; padding: 2rem; color: var(--text-muted); }
 
         .toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--primary); color: var(--text); padding: 1rem; border-radius: var(--radius); box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 1000; transform: translateY(100px); opacity: 0; transition: all 0.3s; display: flex; align-items: center; gap: 1rem;}
         .toast.show { transform: translateY(0); opacity: 1; }
@@ -294,13 +319,16 @@
 </head>
 <body>
 
-    <!-- Login Screen (shown until the user signs in with Google) -->
+    <!-- Login Screen (only shown when the user chooses to manage cloud backup - never blocks entry) -->
     <div id="loginScreen">
+        <button id="loginScreenClose" onclick="cancelAccountSwitch()" title="Close" style="position:absolute; top:1rem; inset-inline-end:1rem; background:var(--surface); border:1px solid var(--border); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--text);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
         <div class="brand-lg">
             <img src="data:image/png;base64,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" alt="Chronicle" style="height:40px; width:auto;">
             Chronicle
         </div>
-        <p id="loginDesc">Sign in with your Google account to sync your archive across every device.<br>سجّل الدخول بحساب Google لمزامنة أرشيفك عبر جميع أجهزتك.</p>
+        <p id="loginDesc">Your archive already works fully offline on this device. Sign in with Google only if you want to back it up and sync it across other devices.<br>أرشيفك يعمل بالكامل محليًا على هذا الجهاز. سجّل الدخول بحساب Google فقط إذا أردت نسخه احتياطيًا ومزامنته عبر أجهزة أخرى.</p>
         <div id="accountPicker" class="flex gap-4 hidden" style="flex-wrap:wrap; justify-content:center; max-width:400px;"></div>
         <button class="google-btn" id="mainSignInBtn" onclick="signIn()">
             <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 16 4 9.1 8.5 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.3c-2 1.4-4.6 2.3-7.2 2.3-5.3 0-9.7-3.1-11.3-7.7l-6.5 5C9 39.6 15.9 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.3C40.5 36.3 44 30.7 44 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
@@ -434,8 +462,8 @@
                         <div>
                             <label data-i18n="status">Status</label>
                             <select id="itemStatus" class="input">
+                                <option value="completed" data-i18n="completed" selected>Completed</option>
                                 <option value="watching" data-i18n="watchingNow">Watching Now</option>
-                                <option value="completed" data-i18n="completed">Completed</option>
                                 <option value="planto" data-i18n="planTo">Plan To Watch/Play</option>
                                 <option value="dropped" data-i18n="dropped">Dropped</option>
                             </select>
@@ -516,6 +544,19 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="top10PickerModal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 id="top10PickerTitle">Add to Top 10</h3>
+                <button onclick="closeModal('top10PickerModal')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" class="input" id="top10PickerSearch" placeholder="Search..." oninput="renderTop10PickerList()" data-i18n="search">
+                <div id="top10PickerList" class="flex-col gap-2" style="max-height: 50vh; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast">
         <div class="ach-icon">🏆</div>
@@ -535,7 +576,7 @@
                 achievements: "Achievements", timeline: "Timeline", statistics: "Statistics", settings: "Settings",
                 addNew: "Add New", addNewItem: "Add Media", title: "Title *", category: "Category", status: "Status", selectCategory: "Select category...",
                 rating: "Rating (1-10)", year: "Release Year", coverImage: "Cover Image", notes: "Personal Notes",
-                addToFav: "Add to Favorites", save: "Save", edit: "Edit", delete: "Delete", dropped: "Dropped",
+                addToFav: "Add to Favorites", save: "Save", edit: "Edit", delete: "Delete", dropped: "Dropped", doneEditing: "Done",
                 totalItems: "Total Items", totalTime: "Total Time Spent", favCount: "Favorites",
                 all: "All", anime: "Anime", movie: "Movies", series: "TV Series", game: "Games", search: "Search...",
                 episodes: "Total Episodes", seasons: "Seasons", duration: "Duration (mins)", platform: "Platform", hoursPlayed: "Hours Played",
@@ -552,7 +593,8 @@
                 unlockedAch: "Unlocked", lockedAch: "Locked",
                 contactMe: "Contact Me", aboutApp: "About Chronicle", version: "Version", createdBy: "Created by",
                 resetLibrary: "Reset My Library", resetConfirm: "This permanently deletes every anime, movie, series, and game you've added, on this device and in Drive once synced. This cannot be undone. Continue?",
-                resetDone: "Your library has been reset.", years: "yr"
+                resetDone: "Your library has been reset.", years: "yr",
+                avgRating: "Average Rating", highRatedLabel: "Top Rated (9+)", favoritesLabel: "Favorites"
             },
             ar: {
                 appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
@@ -560,7 +602,7 @@
                 achievements: "الإنجازات", timeline: "السجل الزمني", statistics: "الإحصائيات", settings: "الإعدادات",
                 addNew: "إضافة", addNewItem: "إضافة عنصر جديد", title: "العنوان *", category: "الفئة", status: "الحالة", selectCategory: "اختر الفئة...",
                 rating: "التقييم (من 1 إلى 10)", year: "سنة الإصدار", coverImage: "صورة الغلاف", notes: "ملاحظات",
-                addToFav: "أضِف إلى المفضلة", save: "حفظ", edit: "تعديل", delete: "حذف", dropped: "متروكة",
+                addToFav: "أضِف إلى المفضلة", save: "حفظ", edit: "تعديل", delete: "حذف", dropped: "متروكة", doneEditing: "تم",
                 totalItems: "عدد العناصر", totalTime: "إجمالي وقت المشاهدة", favCount: "عدد المفضلة",
                 all: "الكل", anime: "أنمي", movie: "أفلام", series: "مسلسلات", game: "ألعاب", search: "ابحث...",
                 episodes: "إجمالي الحلقات", seasons: "عدد المواسم", duration: "المدة (بالدقائق)", platform: "المنصة", hoursPlayed: "ساعات اللعب",
@@ -577,7 +619,8 @@
                 unlockedAch: "مفتوحة", lockedAch: "مقفلة",
                 contactMe: "تواصل معي", aboutApp: "عن التطبيق", version: "الإصدار", createdBy: "صُنع بواسطة",
                 resetLibrary: "إعادة تعيين مكتبتي", resetConfirm: "سيؤدي هذا لحذف كل الأنمي والأفلام والمسلسلات والألعاب التي أضفتها نهائيًا، على هذا الجهاز وعلى Drive بعد المزامنة. لا يمكن التراجع عن هذا. هل تريد المتابعة؟",
-                resetDone: "تمت إعادة تعيين مكتبتك.", years: "سنة"
+                resetDone: "تمت إعادة تعيين مكتبتك.", years: "سنة",
+                avgRating: "متوسط التقييم", highRatedLabel: "الأعلى تقييمًا (9+)", favoritesLabel: "المفضلة"
             }
         };
 
@@ -594,17 +637,29 @@
             { id: "movie_buff_20", icon: "🎟️", title: { en: "Movie Buff", ar: "خبير الأفلام" }, desc: { en: "Watch 20 movies (incl. animation movies)", ar: "شاهد 20 فيلمًا (بما فيها أفلام الأنيميشن)" }, condition: (s) => s.totalMoviesWatched >= 20 },
             { id: "collector_25", icon: "📚", title: { en: "Collector", ar: "الجامع" }, desc: { en: "Add 25 items to your archive", ar: "أضف 25 عنصرًا لأرشيفك" }, condition: (s) => s.total >= 25 },
             { id: "collector_100", icon: "🏛️", title: { en: "Archivist", ar: "أمين الأرشيف" }, desc: { en: "Add 100 items to your archive", ar: "أضف 100 عنصر لأرشيفك" }, condition: (s) => s.total >= 100 },
-            { id: "well_rounded", icon: "🧭", title: { en: "Well Rounded", ar: "متنوّع الذوق" }, desc: { en: "Complete at least 1 item in every category", ar: "أكمل عنصرًا واحدًا على الأقل من كل فئة" }, condition: (s) => s.animeCompleted > 0 && s.moviesCompleted > 0 && s.seriesCompleted > 0 && s.gamesCompleted > 0 && s.animeMovieCompleted > 0 }
+            { id: "well_rounded", icon: "🧭", title: { en: "Well Rounded", ar: "متنوّع الذوق" }, desc: { en: "Complete at least 1 item in every category", ar: "أكمل عنصرًا واحدًا على الأقل من كل فئة" }, condition: (s) => s.animeCompleted > 0 && s.moviesCompleted > 0 && s.seriesCompleted > 0 && s.gamesCompleted > 0 && s.animeMovieCompleted > 0 },
+            { id: "critics_choice", icon: "⭐", title: { en: "Critic's Choice", ar: "اختيار الناقد" }, desc: { en: "Rate 10 completed items 9.0 or higher", ar: "قيّم 10 عناصر مكتملة بـ 9.0 أو أعلى" }, condition: (s) => s.highRated >= 10 }
         ];
 
         let state = {
             data: [],
             settings: { lang: 'en', theme: 'chronicle' },
             unlockedAchievements: [],
-            top10: []
+            top10: { anime: [], series: [], movies: [], games: [] }
         };
         let currentView = 'dashboard';
         let currentItem = null;
+
+        // Makes sure state.top10 is always the 4-category object shape, even if it was
+        // loaded from an old backup/Drive file that still has the old flat-array format.
+        function normalizeTop10() {
+            if (!state.top10 || Array.isArray(state.top10) || typeof state.top10 !== 'object') {
+                state.top10 = { anime: [], series: [], movies: [], games: [] };
+            }
+            ['anime', 'series', 'movies', 'games'].forEach(c => {
+                if (!Array.isArray(state.top10[c])) state.top10[c] = [];
+            });
+        }
 
         // --- GOOGLE DRIVE STORAGE CONFIG ---
         // 1) Create an OAuth Client ID (type: Web application) in Google Cloud Console:
@@ -628,11 +683,15 @@
         const ACCOUNTS_KEY = "chronicle_accounts";
         const LAST_EMAIL_KEY = "chronicle_last_email";
 
+        // Used whenever no Google account is signed in, so the app can still save/load data
+        // locally right away without ever forcing the user through a login screen.
+        const LOCAL_ACCOUNT = { email: '__local__', name: '', picture: '' };
+
         let accessToken = null;
         let driveFileId = null;
         let tokenClient = null;
         let saveTimeout = null;
-        let currentAccount = null; // { email, name, picture }
+        let currentAccount = LOCAL_ACCOUNT; // { email, name, picture } - Google account once signed in, or LOCAL_ACCOUNT
         let appAlreadyRendered = false; // true once the app UI is showing (from cache or after sign-in)
         let lastSyncedAt = 0; // timestamp of the last successful two-way sync with Drive
 
@@ -728,7 +787,17 @@
 
         function renderSidebarAccountWidget() {
             const el = document.getElementById('sidebarAccount');
-            if (!el || !currentAccount) return;
+            if (!el) return;
+            if (!currentAccount || currentAccount.email === LOCAL_ACCOUNT.email) {
+                el.innerHTML = `
+                    <div class="avatar-fallback">☁</div>
+                    <div class="acc-info">
+                        <div class="acc-name">${state.settings.lang === 'ar' ? 'حفظ محلي' : 'Saved locally'}</div>
+                        <div class="acc-email">${state.settings.lang === 'ar' ? 'اضغط لتفعيل النسخ السحابي' : 'Tap to enable cloud backup'}</div>
+                    </div>
+                `;
+                return;
+            }
             el.innerHTML = `
                 ${currentAccount.picture
                     ? `<img src="${currentAccount.picture}" referrerpolicy="no-referrer">`
@@ -742,15 +811,22 @@
 
         function openAccountSwitcher() {
             // Go back to the login screen to pick a different account, without deleting saved data
+            // (currentAccount is left as-is so local data keeps working if the user backs out)
             accessToken = null;
             driveFileId = null;
-            currentAccount = null;
             signInLock = false;
-            appAlreadyRendered = false;
             renderAccountPicker();
             document.getElementById('appContainer').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('loginStatus').innerText = '';
+        }
+
+        // Lets the user back out of the account picker and return straight to the app,
+        // since signing in with Google is optional (only needed for cross-device backup).
+        function cancelAccountSwitch() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            appAlreadyRendered = true;
         }
 
         let signInLock = false; // prevents two overlapping sign-in attempts from racing each other
@@ -856,17 +932,16 @@
         }
 
         function signOut() {
+            if (!currentAccount || currentAccount.email === LOCAL_ACCOUNT.email) return; // nothing to sign out of
             if (accessToken) {
                 google.accounts.oauth2.revoke(accessToken, () => {});
             }
-            if (currentAccount) {
-                removeStoredAccount(currentAccount.email);
-                idbDelete(currentAccount.email).catch(() => {});
-            }
+            removeStoredAccount(currentAccount.email);
+            idbDelete(currentAccount.email).catch(() => {});
             localStorage.removeItem(LAST_EMAIL_KEY);
             accessToken = null;
             driveFileId = null;
-            currentAccount = null;
+            currentAccount = LOCAL_ACCOUNT;
             appAlreadyRendered = false;
             location.reload();
         }
@@ -874,7 +949,7 @@
         function resetLibrary() {
             if (!confirm(t('resetConfirm'))) return;
             state.data = [];
-            state.top10 = [];
+            state.top10 = { anime: [], series: [], movies: [], games: [] };
             state.unlockedAchievements = [];
             saveState();
             applySettings();
@@ -901,6 +976,7 @@
                 // No local copy yet for this account on this device - pull whatever is on Drive
                 try { await pullFromDriveIfNewer(); } catch (e) { console.error(e); }
             }
+            normalizeTop10();
             if (state.data.length === 0) populateInitialData();
             applySettings();
             renderSidebar();
@@ -914,19 +990,21 @@
             }
         }
 
-        // Boot the app straight from its local offline copy (if any) before even touching the
-        // network - this is what lets it open instantly and work like a normal installed app.
+        // Boot the app straight in - no login screen, no required action. If this browser has
+        // signed in with Google before, we quietly pick up that account (for Drive backup);
+        // otherwise we just use the local, on-device copy of the library. Either way the app
+        // opens immediately and works fully offline.
         async function boot() {
             const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
             if (lastEmail) {
                 const stored = getStoredAccounts().find(a => a.email === lastEmail);
                 if (stored) currentAccount = stored;
-                await initApp(); // loads from IndexedDB instantly if this account has been used before
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('appContainer').classList.remove('hidden');
-                appAlreadyRendered = true;
             }
-            initGoogleAuth(); // sets up sign-in; will quietly refresh/sync in the background if online
+            await initApp(); // loads instantly from IndexedDB (local copy, or this account's copy)
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            appAlreadyRendered = true;
+            initGoogleAuth(); // sets up optional sign-in; will quietly refresh/sync in the background if online
         }
 
         async function findDriveFile() {
@@ -959,7 +1037,8 @@
             state.data = parsed.data || [];
             state.settings = parsed.settings || state.settings || { lang: 'en', theme: 'chronicle' };
             state.unlockedAchievements = parsed.unlockedAchievements || [];
-            state.top10 = parsed.top10 || [];
+            state.top10 = parsed.top10 || { anime: [], series: [], movies: [], games: [] };
+            normalizeTop10();
             lastSyncedAt = Date.now();
             if (currentAccount) {
                 try { await idbSet(currentAccount.email, { state, savedAt: lastSyncedAt, lastSyncedAt }); } catch (e) { console.error(e); }
@@ -1232,6 +1311,9 @@
                     <div class="card stat-card"><div class="stat-value" style="font-size:1.5rem; line-height:2.5rem">${timeStr}</div><div data-i18n="totalTime">${t('totalTime')}</div></div>
                     <div class="card stat-card"><div class="stat-value stat-number" id="statEpisodes" data-target="${s.totalEpisodesWatched}">0</div><div data-i18n="totalEpisodesWatched">${t('totalEpisodesWatched')}</div></div>
                     <div class="card stat-card"><div class="stat-value stat-number" id="statMoviesWatched" data-target="${s.totalMoviesWatched}">0</div><div data-i18n="totalMoviesWatched">${t('totalMoviesWatched')}</div></div>
+                    <div class="card stat-card"><div class="stat-value stat-number" id="statFavorites" data-target="${favs}">0</div><div>${t('favoritesLabel')}</div></div>
+                    <div class="card stat-card"><div class="stat-value stat-number" id="statPlanTo" data-target="${s.planToCount}">0</div><div>${t('planTo')}</div></div>
+                    <div class="card stat-card"><div class="stat-value" style="color:var(--warning)">${s.avgRatingOverall ? '★ ' + s.avgRatingOverall : '—'}</div><div>${t('avgRating')}</div></div>
                 </div>
                 <h3 class="p-4" style="font-size:1.25rem; font-weight:bold">${t('recentlyAdded')}</h3>
                 <div class="media-grid">
@@ -1362,30 +1444,139 @@
             `;
         }
 
-        function renderRankings(container) {
-            // Simplified drag and drop ranking for Top 10 completed items
-            const completed = state.data.filter(i => i.status === 'completed');
-            if(state.top10.length === 0 && completed.length > 0) {
-                state.top10 = completed.slice(0, 10).map(i => i.id);
-            }
-            
-            // Clean up deleted items from top10
-            state.top10 = state.top10.filter(id => state.data.find(i => i.id === id));
+        // --- TOP 10 RANKINGS (4 separate lists: Anime, Series, Movies, Games) ---
 
-            let html = `<p class="p-4 text-center text-muted" style="color:var(--text-muted)">${t('rankDesc')}</p><div class="rank-list" id="rankList">`;
-            state.top10.forEach((id, index) => {
+        let currentTop10Cat = 'anime';
+        let top10EditMode = false;
+
+        function top10Meta() {
+            return {
+                anime:  { label: t('anime'),  icon: '🍥' },
+                series: { label: t('series'), icon: '📺' },
+                movies: { label: t('movie'),  icon: '🎬' },
+                games:  { label: t('game'),   icon: '🎮' }
+            };
+        }
+
+        // The pool of items eligible for a given Top 10 category - completed items only,
+        // with "movies" combining regular Movies and Animation Movies into one list.
+        function top10CategoryItems(cat) {
+            if (cat === 'movies') return state.data.filter(i => (i.category === 'movie' || i.category === 'animemovie') && i.status === 'completed');
+            const catKey = cat === 'games' ? 'game' : cat;
+            return state.data.filter(i => i.category === catKey && i.status === 'completed');
+        }
+
+        function renderRankings(container) {
+            normalizeTop10();
+            // Clean up any deleted items from every category's list
+            Object.keys(state.top10).forEach(c => {
+                state.top10[c] = state.top10[c].filter(id => state.data.find(i => i.id === id));
+            });
+
+            const meta = top10Meta();
+            const list = state.top10[currentTop10Cat] || [];
+
+            let html = `<div class="top10-tabs">`;
+            Object.keys(meta).forEach(c => {
+                html += `<button class="top10-tab-btn ${currentTop10Cat === c ? 'active' : ''}" onclick="switchTop10Cat('${c}')">${meta[c].icon} ${meta[c].label}</button>`;
+            });
+            html += `</div>`;
+
+            html += `
+                <div class="flex justify-between items-center gap-2" style="margin-bottom:1rem; flex-wrap:wrap;">
+                    <p style="color:var(--text-muted); margin:0;">${t('rankDesc')}</p>
+                    <div class="flex gap-2">
+                        <button class="btn btn-surface" onclick="toggleTop10Edit()">
+                            ${top10EditMode ? '✓ ' + t('doneEditing') : '✎ ' + t('edit')}
+                        </button>
+                        <button class="btn btn-primary" onclick="openTop10Picker()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            ${t('addNew')}
+                        </button>
+                    </div>
+                </div>
+                <div class="rank-list" id="rankList">
+            `;
+
+            if (list.length === 0) {
+                html += `<div class="top10-empty-hint">${t('nothingHere')}</div>`;
+            }
+
+            const medals = ['🥇', '🥈', '🥉'];
+            list.forEach((id, index) => {
                 const item = state.data.find(i => i.id === id);
-                if(!item) return;
+                if (!item) return;
+                const rankClass = index === 0 ? 'rank-gold' : index === 1 ? 'rank-silver' : index === 2 ? 'rank-bronze' : '';
+                const medal = medals[index] || '';
                 html += `
-                    <div class="rank-item" draggable="true" ondragstart="dragStart(event, ${index})" ondragover="dragOver(event)" ondrop="drop(event, ${index})">
-                        <div class="rank-number">${index + 1}</div>
+                    <div class="rank-item ${rankClass}" ${top10EditMode ? `draggable="true" ondragstart="dragStart(event, ${index})" ondragover="dragOver(event)" ondrop="drop(event, ${index})"` : ''}>
+                        <div class="rank-number">${medal || (index + 1)}</div>
                         <div class="media-title" style="flex:1">${item.title}</div>
                         <div class="badge" style="position:static; display:block">${t(item.category)}</div>
+                        ${top10EditMode ? `<button class="btn btn-danger" style="padding:0.35rem 0.6rem;" onclick="removeFromTop10('${id}')" title="${t('delete')}">✕</button>` : ''}
                     </div>
                 `;
             });
             html += `</div>`;
             container.innerHTML = html;
+        }
+
+        function switchTop10Cat(cat) {
+            currentTop10Cat = cat;
+            top10EditMode = false;
+            renderRankings(document.getElementById('viewContainer'));
+        }
+
+        function toggleTop10Edit() {
+            top10EditMode = !top10EditMode;
+            renderRankings(document.getElementById('viewContainer'));
+        }
+
+        function removeFromTop10(id) {
+            state.top10[currentTop10Cat] = state.top10[currentTop10Cat].filter(x => x !== id);
+            saveState();
+            renderRankings(document.getElementById('viewContainer'));
+        }
+
+        function openTop10Picker() {
+            const meta = top10Meta();
+            document.getElementById('top10PickerTitle').innerText = `${t('addNew')} — ${meta[currentTop10Cat].label}`;
+            document.getElementById('top10PickerSearch').value = '';
+            renderTop10PickerList();
+            document.getElementById('top10PickerModal').classList.add('active');
+        }
+
+        function renderTop10PickerList() {
+            const q = (document.getElementById('top10PickerSearch').value || '').toLowerCase();
+            const items = top10CategoryItems(currentTop10Cat).filter(i => i.title.toLowerCase().includes(q));
+            const listEl = document.getElementById('top10PickerList');
+            if (!items.length) {
+                listEl.innerHTML = `<div class="top10-empty-hint">${t('nothingHere')}</div>`;
+                return;
+            }
+            listEl.innerHTML = items.map(i => {
+                const already = state.top10[currentTop10Cat].includes(i.id);
+                return `
+                    <div class="top10-picker-item ${already ? 'already-added' : ''}" ${already ? '' : `onclick="addToTop10('${i.id}')"`}>
+                        <span style="flex:1">${i.title}</span>
+                        <span class="badge" style="position:static;">${i.rating ? '★ ' + i.rating : ''}</span>
+                        ${already ? `<span style="color:var(--success); font-size:0.85rem;">✓</span>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addToTop10(id) {
+            const list = state.top10[currentTop10Cat];
+            if (list.includes(id)) return;
+            if (list.length >= 10) {
+                alert(state.settings.lang === 'ar' ? 'الحد الأقصى 10 عناصر في كل قائمة.' : 'Each Top 10 list can hold a maximum of 10 items.');
+                return;
+            }
+            list.push(id);
+            saveState();
+            renderTop10PickerList();
+            renderRankings(document.getElementById('viewContainer'));
         }
 
         let dragIndex = null;
@@ -1394,8 +1585,10 @@
         function drop(e, index) {
             e.preventDefault();
             if(dragIndex === null || dragIndex === index) return;
-            const draggedId = state.top10.splice(dragIndex, 1)[0];
-            state.top10.splice(index, 0, draggedId);
+            const list = state.top10[currentTop10Cat];
+            const draggedId = list.splice(dragIndex, 1)[0];
+            list.splice(index, 0, draggedId);
+            dragIndex = null;
             saveState();
             renderRankings(document.getElementById('viewContainer'));
         }
@@ -1456,7 +1649,7 @@
             const s = getStats();
             const totalCompleted = s.moviesCompleted + s.animeCompleted + s.gamesCompleted + s.seriesCompleted + s.animeMovieCompleted;
 
-            const insightCard = (label, count, episodesOrHoursLabel, episodesOrHoursValue, minutes, icon) => `
+            const insightCard = (label, count, episodesOrHoursLabel, episodesOrHoursValue, minutes, icon, favCount, avgRating) => `
                 <div class="card insight-card">
                     <div class="flex items-center gap-2" style="margin-bottom:0.75rem;">
                         <span style="font-size:1.4rem;">${icon}</span>
@@ -1464,7 +1657,9 @@
                     </div>
                     <div class="flex justify-between" style="margin-bottom:0.4rem;"><span style="color:var(--text-muted)">${t('titlesLabel')}</span><strong>${count}</strong></div>
                     ${episodesOrHoursValue !== null ? `<div class="flex justify-between" style="margin-bottom:0.4rem;"><span style="color:var(--text-muted)">${episodesOrHoursLabel}</span><strong>${episodesOrHoursValue}</strong></div>` : ''}
-                    <div class="flex justify-between"><span style="color:var(--text-muted)">${t('timeSpentLabel')}</span><strong style="color:var(--primary)">${formatDuration(minutes)}</strong></div>
+                    <div class="flex justify-between" style="margin-bottom:0.4rem;"><span style="color:var(--text-muted)">${t('timeSpentLabel')}</span><strong style="color:var(--primary)">${formatDuration(minutes)}</strong></div>
+                    <div class="flex justify-between" style="margin-bottom:0.4rem;"><span style="color:var(--text-muted)">${t('favoritesLabel')}</span><strong>${favCount}</strong></div>
+                    <div class="flex justify-between"><span style="color:var(--text-muted)">${t('avgRating')}</span><strong style="color:var(--warning)">${avgRating ? '★ ' + avgRating : '—'}</strong></div>
                 </div>
             `;
 
@@ -1474,12 +1669,16 @@
                     <div class="card stat-card"><div class="stat-value" style="color:var(--success)">${totalCompleted}</div><div>${t('completed')}</div></div>
                     <div class="card stat-card"><div class="stat-value">${s.totalEpisodesWatched}</div><div>${t('totalEpisodesWatched')}</div></div>
                     <div class="card stat-card"><div class="stat-value">${s.totalMoviesWatched}</div><div>${t('totalMoviesWatched')}</div></div>
+                    <div class="card stat-card"><div class="stat-value">${s.favoritesTotal}</div><div>${t('favoritesLabel')}</div></div>
+                    <div class="card stat-card"><div class="stat-value">${s.dropped}</div><div>${t('dropped')}</div></div>
+                    <div class="card stat-card"><div class="stat-value" style="color:var(--warning)">${s.highRated}</div><div>${t('highRatedLabel')}</div></div>
+                    <div class="card stat-card"><div class="stat-value" style="color:var(--warning)">${s.avgRatingOverall ? '★ ' + s.avgRatingOverall : '—'}</div><div>${t('avgRating')}</div></div>
                 </div>
                 <div class="grid grid-cols-2 gap-4" style="max-width:800px; margin: 1.5rem auto 0;">
-                    ${insightCard(t('insightAnime'), s.cat.anime, t('episodesLabel'), s.episodesByCategory.anime, s.minutes.anime, '🍥')}
-                    ${insightCard(t('insightSeries'), s.cat.series, t('episodesLabel'), s.episodesByCategory.series, s.minutes.series, '📺')}
-                    ${insightCard(t('insightMovies'), s.cat.movie + s.cat.animemovie, null, null, s.minutes.movies, '🎬')}
-                    ${insightCard(t('insightGames'), s.cat.game, t('hoursPlayed'), s.gamesHoursPlayed, s.minutes.games, '🎮')}
+                    ${insightCard(t('insightAnime'), s.cat.anime, t('episodesLabel'), s.episodesByCategory.anime, s.minutes.anime, '🍥', s.favoritesByCategory.anime, s.avgRatingByCategory.anime)}
+                    ${insightCard(t('insightSeries'), s.cat.series, t('episodesLabel'), s.episodesByCategory.series, s.minutes.series, '📺', s.favoritesByCategory.series, s.avgRatingByCategory.series)}
+                    ${insightCard(t('insightMovies'), s.cat.movie + s.cat.animemovie, null, null, s.minutes.movies, '🎬', s.favoritesByCategory.movies, s.avgRatingByCategory.movies)}
+                    ${insightCard(t('insightGames'), s.cat.game, t('hoursPlayed'), s.gamesHoursPlayed, s.minutes.games, '🎮', s.favoritesByCategory.games, s.avgRatingByCategory.games)}
                 </div>
             `;
         }
@@ -1521,8 +1720,9 @@
                         </div>
 
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
+                        ${currentAccount && currentAccount.email !== LOCAL_ACCOUNT.email ? `
                         <p style="color:var(--text-muted); font-size:0.85rem;">
-                            ${state.settings.lang === 'ar' ? 'بياناتك محفوظة في Google Drive الخاص بحسابك.' : 'Your data is stored in your Google Drive account.'}
+                            ${state.settings.lang === 'ar' ? 'بياناتك محفوظة محليًا وتُنسخ احتياطيًا إلى Google Drive الخاص بحسابك.' : 'Your data is stored locally and backed up to your Google Drive account.'}
                         </p>
                         <button class="btn btn-primary" onclick="manualSaveToDrive()">
                             ${state.settings.lang === 'ar' ? 'حفظ الآن في Google Drive' : 'Save now to Google Drive'}
@@ -1531,7 +1731,16 @@
                             ${state.settings.lang === 'ar' ? 'البحث عن ملفي وتحميله من Drive' : 'Search & load my file from Drive'}
                         </button>
                         <div id="syncStatusSettings" style="font-size:0.85rem; color:var(--text-muted); min-height:1.2rem;"></div>
+                        ` : `
+                        <p style="color:var(--text-muted); font-size:0.85rem;">
+                            ${state.settings.lang === 'ar' ? 'أرشيفك محفوظ محليًا على هذا الجهاز فقط. سجّل الدخول بحساب Google لنسخه احتياطيًا ومزامنته عبر أجهزتك الأخرى (اختياري).' : "Your archive is saved locally on this device only. Sign in with Google to back it up and sync it across your other devices (optional)."}
+                        </p>
+                        <button class="btn btn-primary" onclick="openAccountSwitcher()">
+                            ${state.settings.lang === 'ar' ? 'تفعيل النسخ الاحتياطي السحابي' : 'Enable cloud backup'}
+                        </button>
+                        `}
 
+                        ${currentAccount && currentAccount.email !== LOCAL_ACCOUNT.email ? `
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
                         <label>${state.settings.lang === 'ar' ? 'الحسابات المحفوظة على هذا الجهاز' : 'Accounts saved on this device'}</label>
                         <div class="flex-col gap-2">
@@ -1543,11 +1752,12 @@
                                     <div style="flex:1; font-size:0.85rem;">${a.name || a.email}${a.email === currentAccount?.email ? (state.settings.lang === 'ar' ? ' (الحالي)' : ' (current)') : ''}</div>
                                     ${a.email !== currentAccount?.email ? `<button class="btn btn-surface" style="padding:0.25rem 0.6rem; font-size:0.8rem;" onclick="removeStoredAccount('${a.email.replace(/'/g, "\\'")}'); navigate('settings')">${state.settings.lang === 'ar' ? 'إزالة' : 'Remove'}</button>` : ''}
                                 </div>
-                            `).join('') || `<p style="color:var(--text-muted); font-size:0.85rem;">${state.settings.lang === 'ar' ? 'لا توجد حسابات محفوظة أخرى.' : 'No other saved accounts.'}</p>`}
+                            `).join('') || ''}
                             <button class="btn btn-surface" onclick="openAccountSwitcher()">
                                 ${state.settings.lang === 'ar' ? 'تبديل الحساب' : 'Switch account'}
                             </button>
                         </div>
+                        ` : ''}
 
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
 
@@ -1589,10 +1799,12 @@
                             <div class="flex justify-between"><span style="color:var(--text-muted)">${t('createdBy')}</span><strong>Zayd Chkouri</strong></div>
                         </div>
 
+                        ${currentAccount && currentAccount.email !== LOCAL_ACCOUNT.email ? `
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
                         <button class="btn btn-surface" style="border-color:var(--danger); color:var(--danger)" onclick="signOut()">
                             ${state.settings.lang === 'ar' ? 'تسجيل الخروج وحذف هذا الحساب من الجهاز' : 'Sign out and remove this account from device'}
                         </button>
+                        ` : ''}
 
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
                         <div class="site-credit" style="justify-content:center;">Chronicle <span class="heart">♥</span> by Zayd Chkouri • v${APP_VERSION}</div>
@@ -2068,7 +2280,7 @@
         function deleteCurrentItem() {
             if(confirm(state.settings.lang === 'en' ? "Are you sure?" : "هل أنت متأكد؟")) {
                 state.data = state.data.filter(i => i.id !== currentItem.id);
-                state.top10 = state.top10.filter(id => id !== currentItem.id);
+                Object.keys(state.top10).forEach(c => { state.top10[c] = state.top10[c].filter(id => id !== currentItem.id); });
                 saveState();
                 closeModal('detailsModal');
                 navigate(currentView);
@@ -2094,6 +2306,11 @@
             const movieMinutes = (items) => items
                 .filter(i => i.status === 'completed')
                 .reduce((sum, i) => sum + (parseInt(i.duration) || 100), 0);
+            const avgRating = (items) => {
+                const rated = items.filter(i => parseFloat(i.rating) > 0);
+                if (!rated.length) return 0;
+                return Math.round((rated.reduce((sum, i) => sum + parseFloat(i.rating), 0) / rated.length) * 10) / 10;
+            };
 
             return {
                 total: state.data.length,
@@ -2117,7 +2334,24 @@
                     series: episodeMinutes(series),
                     movies: movieMinutes(movies) + movieMinutes(animeMovies),
                     games: games.filter(i => watchedStatuses.includes(i.status)).reduce((sum, i) => sum + (parseFloat(i.hoursPlayed) || 0) * 60, 0)
-                }
+                },
+                favoritesByCategory: {
+                    anime: anime.filter(i => i.favorite).length,
+                    series: series.filter(i => i.favorite).length,
+                    movies: movies.filter(i => i.favorite).length + animeMovies.filter(i => i.favorite).length,
+                    games: games.filter(i => i.favorite).length
+                },
+                avgRatingByCategory: {
+                    anime: avgRating(anime),
+                    series: avgRating(series),
+                    movies: avgRating(movies.concat(animeMovies)),
+                    games: avgRating(games)
+                },
+                dropped: state.data.filter(i => i.status === 'dropped').length,
+                planToCount: state.data.filter(i => i.status === 'planto').length,
+                favoritesTotal: state.data.filter(i => i.favorite).length,
+                avgRatingOverall: avgRating(state.data),
+                highRated: state.data.filter(i => i.status === 'completed' && parseFloat(i.rating) >= 9).length
             };
         }
 
@@ -2172,6 +2406,7 @@
                     const parsed = JSON.parse(e.target.result);
                     if(parsed.data) {
                         state = parsed;
+                        normalizeTop10();
                         saveState();
                         alert(state.settings.lang === 'ar' ? "تمت استعادة النسخة الاحتياطية بنجاح!" : "Backup restored successfully!");
                         applySettings();
