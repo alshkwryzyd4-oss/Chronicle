@@ -142,6 +142,7 @@
         .media-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
         .badge { position: absolute; top: 0.5rem; inset-inline-end: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; background: rgba(0,0,0,0.7); color: #fff; }
         .imdb-badge { display: inline-flex; align-items: center; gap: 0.3rem; width: fit-content; background: #f5c518; color: #000; font-weight: 800; font-size: 0.78rem; padding: 0.2rem 0.55rem; border-radius: 4px; letter-spacing: 0.01em; font-family: Arial, Helvetica, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); margin-top: 0.35rem; }
+        .game-badge { display: inline-flex; align-items: center; gap: 0.35rem; width: fit-content; background: #1a1a1a; color: #fff; font-weight: 700; font-size: 0.78rem; padding: 0.25rem 0.6rem; border-radius: 4px; letter-spacing: 0.01em; font-family: Arial, Helvetica, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); margin-top: 0.35rem; border: 1px solid #444; }
 
         /* --- SIDEBAR --- */
         .sidebar { width: 250px; background-color: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; transition: transform var(--transition); z-index: 50; }
@@ -421,7 +422,8 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label data-i18n="category">Category</label>
-                            <select id="itemCategory" class="input" onchange="toggleCategoryFields(); handleTitleSearchInput();">
+                            <select id="itemCategory" class="input" required onchange="toggleCategoryFields(); handleTitleSearchInput();">
+                                <option value="" selected disabled data-i18n="selectCategory">Select category...</option>
                                 <option value="anime">Anime</option>
                                 <option value="animemovie" data-i18n="animeMovie">Animation Movie</option>
                                 <option value="movie">Movie</option>
@@ -495,6 +497,10 @@
                         </div>
                         <p id="detScore" style="font-size: 1.25rem; font-weight: bold; color: var(--warning);"></p>
                         <div id="detImdbBadge" class="imdb-badge hidden"><span>IMDb</span></div>
+                        <div id="detGameBadge" class="game-badge hidden">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h.01 M12 9h.01 M16 9h.01"/></svg>
+                            <span>Metacritic</span>
+                        </div>
                         <div id="detStatsGrid" class="detail-stats-grid"></div>
                         <div style="margin-top: 1rem;">
                             <h4 data-i18n="notes" style="margin-bottom: 0.5rem; color: var(--primary)">Notes</h4>
@@ -527,7 +533,7 @@
                 appName: "Chronicle", dashboard: "Dashboard", library: "My Library", watchingNow: "Watching Now",
                 completed: "Completed", planTo: "Plan To Watch", favorites: "Favorites", rankings: "Top 10 Rankings",
                 achievements: "Achievements", timeline: "Timeline", statistics: "Statistics", settings: "Settings",
-                addNew: "Add New", addNewItem: "Add Media", title: "Title *", category: "Category", status: "Status",
+                addNew: "Add New", addNewItem: "Add Media", title: "Title *", category: "Category", status: "Status", selectCategory: "Select category...",
                 rating: "Rating (1-10)", year: "Release Year", coverImage: "Cover Image", notes: "Personal Notes",
                 addToFav: "Add to Favorites", save: "Save", edit: "Edit", delete: "Delete", dropped: "Dropped",
                 totalItems: "Total Items", totalTime: "Total Time Spent", favCount: "Favorites",
@@ -552,7 +558,7 @@
                 appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
                 completed: "منتهية", planTo: "قائمة الانتظار", favorites: "المفضلة", rankings: "الأفضل 10",
                 achievements: "الإنجازات", timeline: "السجل الزمني", statistics: "الإحصائيات", settings: "الإعدادات",
-                addNew: "إضافة", addNewItem: "إضافة عنصر جديد", title: "العنوان *", category: "الفئة", status: "الحالة",
+                addNew: "إضافة", addNewItem: "إضافة عنصر جديد", title: "العنوان *", category: "الفئة", status: "الحالة", selectCategory: "اختر الفئة...",
                 rating: "التقييم (من 1 إلى 10)", year: "سنة الإصدار", coverImage: "صورة الغلاف", notes: "ملاحظات",
                 addToFav: "أضِف إلى المفضلة", save: "حفظ", edit: "تعديل", delete: "حذف", dropped: "متروكة",
                 totalItems: "عدد العناصر", totalTime: "إجمالي وقت المشاهدة", favCount: "عدد المفضلة",
@@ -1640,56 +1646,86 @@
         }
 
         async function runLiveSearch(query) {
-            const cat = document.getElementById('itemCategory').value;
             const box = document.getElementById('searchResultsBox');
             const thisRequestId = ++searchRequestId;
+            const selectedCat = document.getElementById('itemCategory').value;
             box.classList.remove('hidden');
             box.innerHTML = `<div class="search-result-status">${state.settings.lang === 'ar' ? 'جارٍ البحث...' : 'Searching...'}</div>`;
 
-            try {
-                let results = [];
-                if (cat === 'anime') results = await searchJikan(query);
-                else if (cat === 'movie' || cat === 'animemovie') results = await searchTMDb(query, 'movie');
-                else if (cat === 'series') results = await searchTMDb(query, 'tv');
-                else if (cat === 'game') results = await searchRAWG(query);
+            // Search every source in parallel regardless of which category is currently
+            // selected in the form - this way it doesn't matter whether the user picked
+            // "Anime" or "TV Series" (or nothing at all) first; we look everywhere and let
+            // them pick the right result, which then sets the category for them.
+            const sources = [
+                { cat: 'anime', run: searchJikan(query) },
+                { cat: 'movie', run: searchTMDb(query, 'movie') },
+                { cat: 'series', run: searchTMDb(query, 'tv') },
+                { cat: 'game', run: searchRAWG(query) }
+            ];
 
-                if (thisRequestId !== searchRequestId) return; // a newer search started - drop this stale result
+            const settled = await Promise.allSettled(sources.map(s => s.run));
+            if (thisRequestId !== searchRequestId) return; // a newer search started - drop this stale result
 
-                if (!results.length) {
-                    box.innerHTML = `<div class="search-result-status">${state.settings.lang === 'ar' ? 'لا توجد نتائج - يمكنك الإضافة يدويًا' : 'No results - you can still add it manually'}</div>`;
-                    return;
+            let results = [];
+            let anySucceeded = false;
+            let lastError = null;
+            settled.forEach((res, i) => {
+                if (res.status === 'fulfilled') {
+                    anySucceeded = true;
+                    res.value.forEach(r => results.push({ ...r, detectedCategory: sources[i].cat }));
+                } else {
+                    lastError = res.reason;
                 }
-                box.innerHTML = results.map((r, idx) => `
-                    <div class="search-result-row" onclick="applySearchResult(${idx})">
-                        <img src="${r.cover || ''}" loading="lazy" onerror="this.style.visibility='hidden'">
-                        <div>
-                            <div class="sr-title">${r.title}</div>
-                            <div class="sr-meta">${[r.year, r.extra].filter(Boolean).join(' • ')}</div>
-                        </div>
-                    </div>
-                `).join('');
-                window.__lastSearchResults = results;
-            } catch (e) {
-                if (thisRequestId !== searchRequestId) return;
-                console.error('Live search failed', e);
-                box.innerHTML = `
-                    <div class="search-result-status">
-                        ${state.settings.lang === 'ar' ? 'تعذر البحث الآن - يمكنك الإضافة يدويًا' : "Search unavailable right now - you can still add it manually"}
-                        <div style="color:var(--danger); font-size:0.7rem; margin-top:4px; word-break:break-word;">${(e && e.message) || e}</div>
-                    </div>`;
+            });
+
+            // Put results matching the currently selected category first (if any was picked),
+            // without hiding the rest - they're just reordered below it.
+            if (selectedCat) {
+                results.sort((a, b) => (b.detectedCategory === selectedCat) - (a.detectedCategory === selectedCat));
             }
+
+            if (!results.length) {
+                if (!anySucceeded && lastError) {
+                    box.innerHTML = `
+                        <div class="search-result-status">
+                            ${state.settings.lang === 'ar' ? 'تعذر البحث الآن - يمكنك الإضافة يدويًا' : "Search unavailable right now - you can still add it manually"}
+                            <div style="color:var(--danger); font-size:0.7rem; margin-top:4px; word-break:break-word;">${(lastError && lastError.message) || lastError}</div>
+                        </div>`;
+                } else {
+                    box.innerHTML = `<div class="search-result-status">${state.settings.lang === 'ar' ? 'لا توجد نتائج - يمكنك الإضافة يدويًا' : 'No results - you can still add it manually'}</div>`;
+                }
+                return;
+            }
+            box.innerHTML = results.map((r, idx) => `
+                <div class="search-result-row" onclick="applySearchResult(${idx})">
+                    <img src="${r.cover || ''}" loading="lazy" onerror="this.style.visibility='hidden'">
+                    <div>
+                        <div class="sr-title">${r.title}</div>
+                        <div class="sr-meta">${[t(r.detectedCategory), r.year, r.extra].filter(Boolean).join(' • ')}</div>
+                    </div>
+                </div>
+            `).join('');
+            window.__lastSearchResults = results;
         }
 
         async function searchJikan(query) {
             // Jikan is a free, unofficial API that scrapes MyAnimeList live - it fails
-            // intermittently with 5xx errors even when nothing is wrong on our end, so we
-            // retry a couple of times with a short delay before giving up.
+            // intermittently with 5xx/429 errors even when nothing is wrong on our end, so we
+            // retry a few times with backoff (respecting Retry-After when present) before
+            // giving up. It also rejects queries under 3 characters, so we just return no
+            // results for those instead of letting it error out.
+            if (query.trim().length < 3) return [];
             let lastError;
-            for (let attempt = 0; attempt < 3; attempt++) {
+            for (let attempt = 0; attempt < 4; attempt++) {
                 try {
-                    const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=6&sfw`);
+                    const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=6&sfw=true&order_by=popularity&sort=asc`);
                     if (!res.ok) {
-                        if (res.status >= 500 && attempt < 2) { await new Promise(r => setTimeout(r, 600 * (attempt + 1))); continue; }
+                        if ((res.status === 429 || res.status >= 500) && attempt < 3) {
+                            const retryAfter = parseFloat(res.headers.get('retry-after'));
+                            const wait = !isNaN(retryAfter) ? retryAfter * 1000 : 700 * (attempt + 1);
+                            await new Promise(r => setTimeout(r, wait));
+                            continue;
+                        }
                         throw new Error('Jikan request failed: ' + res.status);
                     }
                     const data = await res.json();
@@ -1704,7 +1740,7 @@
                     }));
                 } catch (e) {
                     lastError = e;
-                    if (attempt < 2) await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+                    if (attempt < 3) await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
                 }
             }
             throw lastError;
@@ -1768,6 +1804,15 @@
             document.getElementById('itemTitle').value = r.title;
             if (r.year) document.getElementById('itemYear').value = r.year;
             if (r.rating) document.getElementById('itemRating').value = r.rating;
+
+            // The result already tells us its real type (anime/movie/series/game) - switch
+            // the category to match it now, regardless of whatever was selected before
+            // searching. This is what lets picking a result fix an "anime vs TV series"
+            // mismatch automatically instead of silently keeping the wrong category.
+            if (r.detectedCategory && r.detectedCategory !== document.getElementById('itemCategory').value) {
+                document.getElementById('itemCategory').value = r.detectedCategory;
+                toggleCategoryFields();
+            }
 
             const cat = document.getElementById('itemCategory').value;
             if ((cat === 'anime' || cat === 'series') && r.episodes) {
@@ -1965,7 +2010,9 @@
             document.getElementById('detCover').src = currentItem.cover || '';
             document.getElementById('detCover').style.display = currentItem.cover ? 'block' : 'none';
             document.getElementById('detScore').innerText = currentItem.rating ? `${parseFloat(currentItem.rating).toFixed(1)}/10 ★` : '';
-            document.getElementById('detImdbBadge').classList.toggle('hidden', !currentItem.rating);
+            const isWatchable = ['anime', 'animemovie', 'movie', 'series'].includes(currentItem.category);
+            document.getElementById('detImdbBadge').classList.toggle('hidden', !currentItem.rating || !isWatchable);
+            document.getElementById('detGameBadge').classList.toggle('hidden', !currentItem.rating || currentItem.category !== 'game');
             document.getElementById('detNotes').innerText = currentItem.notes || '-';
 
             const chips = [];
