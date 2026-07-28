@@ -156,29 +156,30 @@
         /* --- MAIN CONTENT --- */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
-        /* Ambient animated background: a few soft, blurred, slowly drifting color blobs
-           using the active theme's own colors, so it stays visually consistent no matter
-           which theme is selected. Sits behind the content (z-index: 0) and never
-           intercepts clicks (pointer-events: none). Respects reduced-motion preference. */
-        .main-content::before {
-            content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-            background:
-                radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--primary) 22%, transparent) 0%, transparent 45%),
-                radial-gradient(circle at 85% 30%, color-mix(in srgb, var(--primary) 16%, transparent) 0%, transparent 40%),
-                radial-gradient(circle at 50% 85%, color-mix(in srgb, var(--primary) 14%, transparent) 0%, transparent 45%);
-            background-size: 180% 180%;
-            animation: ambientDrift 22s ease-in-out infinite alternate;
-            filter: blur(40px);
-            opacity: 0.6;
+        /* Ambient animated background: two soft, blurred, slowly drifting color blobs using
+           the active theme's own color, so it stays visually consistent under any theme.
+           Kept cheap on purpose: each blob is a small fixed-size circle animated with
+           `transform` only (never background-position/size), so the browser composites it
+           on the GPU instead of repainting a full-screen blur every frame. */
+        .main-content::before, .main-content::after {
+            content: ''; position: absolute; z-index: 0; pointer-events: none;
+            width: 42vmax; height: 42vmax; max-width: 480px; max-height: 480px;
+            border-radius: 50%; background: var(--primary); opacity: 0.16;
+            filter: blur(50px); will-change: transform;
         }
-        @keyframes ambientDrift {
-            0%   { background-position: 0% 0%, 100% 0%, 50% 100%; transform: scale(1); }
-            50%  { background-position: 20% 30%, 80% 20%, 60% 80%; transform: scale(1.08); }
-            100% { background-position: 10% 10%, 90% 40%, 40% 90%; transform: scale(1); }
+        .main-content::before { top: -12%; inset-inline-start: -12%; animation: ambientDrift1 24s ease-in-out infinite; }
+        .main-content::after { bottom: -16%; inset-inline-end: -10%; animation: ambientDrift2 28s ease-in-out infinite; }
+        @keyframes ambientDrift1 {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50%      { transform: translate3d(8vmax, 6vmax, 0); }
+        }
+        @keyframes ambientDrift2 {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50%      { transform: translate3d(-7vmax, -8vmax, 0); }
         }
         .content-area, .header, .bottom-tab-bar { position: relative; z-index: 1; }
         @media (prefers-reduced-motion: reduce) {
-            .main-content::before { animation: none; }
+            .main-content::before, .main-content::after { animation: none; }
         }
 
         .bottom-tab-bar {
@@ -1016,7 +1017,7 @@
         function resetLibrary() {
             if (!confirm(t('resetConfirm'))) return;
             state.data = [];
-            state.top10 = { anime: [], series: [], movies: [], games: [] };
+            state.top10 = { anime: [], animemovie: [], series: [], movies: [], games: [] };
             state.unlockedAchievements = [];
             saveState();
             applySettings();
@@ -1044,7 +1045,6 @@
                 try { await pullFromDriveIfNewer(); } catch (e) { console.error(e); }
             }
             normalizeTop10();
-            if (state.data.length === 0) populateInitialData();
             if (!state.settings.sortBy) state.settings.sortBy = 'dateAdded';
             if (!state.settings.sortDir) state.settings.sortDir = 'desc';
             applySettings();
@@ -1153,7 +1153,6 @@
                 setSyncStatus((state.settings.lang === 'ar' ? '⚠ فشل: ' : '⚠ Failed: ') + e.message, true);
                 return;
             }
-            if (state.data.length === 0) populateInitialData();
             applySettings();
             renderSidebar();
             navigate(currentView || 'dashboard');
