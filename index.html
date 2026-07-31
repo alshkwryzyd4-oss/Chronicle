@@ -176,6 +176,17 @@
         .media-card:hover .media-info { border-color: color-mix(in srgb, var(--primary) 55%, transparent); }
         .media-cover { width: 100%; aspect-ratio: 2/3; object-fit: cover; background-color: var(--bg); border-radius: 18px; box-shadow: 0 8px 22px rgba(0,0,0,0.35); position: relative; z-index: 0; }
         .media-cover.media-cover-game { aspect-ratio: 16/9; }
+        .media-cover.media-cover-music { aspect-ratio: 1/1; }
+        .play-btn-overlay {
+            position: absolute; z-index: 2; bottom: 0.6rem; inset-inline-end: 0.6rem;
+            width: 38px; height: 38px; border-radius: 50%;
+            background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.45); border: 2px solid rgba(255,255,255,0.25);
+            transition: transform var(--transition), background-color var(--transition);
+        }
+        .play-btn-overlay:hover { transform: scale(1.1); background-color: var(--primary-hover); }
+        .play-btn-overlay svg { margin-inline-start: 2px; }
+        .detail-play-btn { display: inline-flex; align-items: center; gap: 0.4rem; }
         /* Floating frosted-glass caption that overlaps the bottom of the poster art, so the
            artwork itself is what's being blurred behind it - real Liquid Glass, not a flat panel. */
         .media-info {
@@ -763,6 +774,7 @@
                                 <option value="movie">Movie</option>
                                 <option value="series">TV Series</option>
                                 <option value="game">Video Game</option>
+                                <option value="music" data-i18n="music">Music</option>
                             </select>
                         </div>
                         <div>
@@ -843,9 +855,28 @@
                     </div>
                 </div>
                 <div class="flex gap-4 justify-end" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <button class="btn btn-primary detail-play-btn hidden" id="detListenBtn" onclick="playMusic(currentItem.id)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        <span data-i18n="listen">Listen</span>
+                    </button>
                     <button class="btn btn-danger" onclick="deleteCurrentItem()" data-i18n="delete">Delete</button>
                     <button class="btn btn-surface" onclick="editCurrentItem()" data-i18n="edit">Edit</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="musicPlayerModal">
+        <div class="modal-content" style="max-width: 640px;">
+            <div class="modal-header">
+                <h3 id="musicPlayerTitle" style="font-size:1rem"></h3>
+                <button onclick="closeMusicPlayer()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="modal-body">
+                <div style="position:relative; width:100%; aspect-ratio:16/9; border-radius:10px; overflow:hidden; background:#000;">
+                    <iframe id="musicPlayerFrame" src="" style="position:absolute; inset:0; width:100%; height:100%; border:0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                </div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.6rem;" data-i18n="musicPlayerNote">Streamed live from YouTube - no account or download needed.</p>
             </div>
         </div>
     </div>
@@ -884,7 +915,8 @@
                 rating: "Rating (1-10)", year: "Release Year", coverImage: "Cover Image", notes: "Personal Notes",
                 addToFav: "Add to Favorites", save: "Save", edit: "Edit", delete: "Delete", dropped: "Dropped", doneEditing: "Done",
                 totalItems: "Total Items", totalTime: "Total Time Spent", favCount: "Favorites",
-                all: "All", anime: "Anime", movie: "Movies", series: "TV Series", game: "Games", search: "Search...",
+                all: "All", anime: "Anime", movie: "Movies", series: "TV Series", game: "Games", music: "Music", search: "Search...",
+                artist: "Artist", album: "Album", listen: "Listen", musicPlayerNote: "Streamed live from YouTube - no account or download needed.",
                 episodes: "Total Episodes", seasons: "Seasons", duration: "Duration (mins)", platform: "Platform", hoursPlayed: "Hours Played",
                 language: "Language", theme: "Theme", exportData: "Export Backup", importData: "Import Backup",
                 achievementUnlocked: "Achievement Unlocked!", nothingHere: "No items found. Start adding some!",
@@ -921,7 +953,8 @@
                 rating: "التقييم (من 1 إلى 10)", year: "سنة الإصدار", coverImage: "صورة الغلاف", notes: "ملاحظات",
                 addToFav: "أضِف إلى المفضلة", save: "حفظ", edit: "تعديل", delete: "حذف", dropped: "متروكة", doneEditing: "تم",
                 totalItems: "عدد العناصر", totalTime: "إجمالي وقت المشاهدة", favCount: "عدد المفضلة",
-                all: "الكل", anime: "أنمي", movie: "أفلام", series: "مسلسلات", game: "ألعاب", search: "ابحث...",
+                all: "الكل", anime: "أنمي", movie: "أفلام", series: "مسلسلات", game: "ألعاب", music: "موسيقى", search: "ابحث...",
+                artist: "الفنان", album: "الألبوم", listen: "استماع", musicPlayerNote: "يُبث مباشرة من يوتيوب - بدون حساب أو تحميل.",
                 episodes: "إجمالي الحلقات", seasons: "عدد المواسم", duration: "المدة (بالدقائق)", platform: "المنصة", hoursPlayed: "ساعات اللعب",
                 language: "اللغة", theme: "المظهر", exportData: "تصدير نسخة احتياطية", importData: "استيراد نسخة احتياطية",
                 achievementUnlocked: "إنجاز جديد!", nothingHere: "لا توجد عناصر بعد، ابدأ بإضافة أول عنصر!",
@@ -1700,6 +1733,7 @@
                 case 'movie': renderLibrary(container, 'movie'); break;
                 case 'series': renderLibrary(container, 'series'); break;
                 case 'game': renderLibrary(container, 'game'); break;
+                case 'music': renderLibrary(container, 'music'); break;
                 case 'favorites': renderLibrary(container, 'all', (i) => i.favorite); break;
                 case 'watchingNow': renderLibrary(container, 'all', (i) => i.status === 'watching'); break;
                 case 'schedule': renderSchedule(container); break;
@@ -1733,6 +1767,7 @@
                 { id: 'movie', icon: 'M3 3h18v18H3z M7 3v18 M17 3v18 M3 7.5h4 M3 12h18 M3 16.5h4 M17 7.5h4 M17 16.5h4' },
                 { id: 'series', icon: 'M2 7h20v15H2z M17 2l-5 5-5-5' },
                 { id: 'game', icon: 'M2 6h20v12H2z M6 12h4 M8 10v4 M15 13h.01 M18 11h.01' },
+                { id: 'music', icon: 'M9 18V5l12-2v13 M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0z M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z' },
                 { id: 'watchingNow', icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
                 { id: 'schedule', icon: 'M8 2v4 M16 2v4 M3 10h18 M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
                 { id: 'completed', icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3' },
@@ -1901,13 +1936,22 @@
             const coverSrc = item.cover || `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='150' fill='${encodeURIComponent('var(--surface-hover)')}'><rect width='100%' height='100%'/></svg>`;
             const badgeColor = item.status === 'completed' ? 'var(--success)' : (item.status === 'watching' ? 'var(--primary)' : 'var(--warning)');
             const isGame = item.category === 'game';
+            const isMusic = item.category === 'music';
+            const coverClass = isGame ? ' media-cover-game' : (isMusic ? ' media-cover-music' : '');
+            const metaParts = isMusic
+                ? [item.artist, item.year || '-']
+                : [t(item.category), item.year || '-'];
+            if ((item.category === 'movie' || item.category === 'animemovie') && item.duration) metaParts.push(item.duration + t('minuteShort'));
             return `
                 <div class="media-card${isGame ? ' media-card-game' : ''}" data-id="${item.id}" data-title="${item.title}" onclick="openDetails('${item.id}')">
-                    <img src="${coverSrc}" class="media-cover${isGame ? ' media-cover-game' : ''}" alt="${item.title}">
+                    <img src="${coverSrc}" class="media-cover${coverClass}" alt="${item.title}">
                     <span class="badge" style="background:${badgeColor}">${t(item.status)}</span>
+                    ${isMusic ? `<button class="play-btn-overlay" onclick="event.stopPropagation(); playMusic('${item.id}')" aria-label="Play" title="${t('listen')}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    </button>` : ''}
                     <div class="media-info">
                         <div class="media-title">${item.title}</div>
-                        <div class="media-meta">${t(item.category)} • ${item.year || '-'}${(item.category === 'movie' || item.category === 'animemovie') && item.duration ? ' • ' + item.duration + t('minuteShort') : ''}</div>
+                        <div class="media-meta">${metaParts.filter(Boolean).join(' • ')}</div>
                     </div>
                 </div>
             `;
@@ -2367,7 +2411,7 @@
         let aiBusy = false;
 
         const VALID_THEMES = ['chronicle', 'dark', 'light', 'cyberpunk', 'ocean', 'forest', 'purple-galaxy', 'amoled', 'sunset', 'mint', 'rose', 'slate'];
-        const VALID_CATEGORIES = ['anime', 'animemovie', 'movie', 'series', 'game'];
+        const VALID_CATEGORIES = ['anime', 'animemovie', 'movie', 'series', 'game', 'music'];
         const VALID_STATUSES = ['completed', 'watching', 'planto', 'dropped'];
 
         function renderAI(container) {
@@ -2476,7 +2520,7 @@
         // the app's data model, and asks for a strict JSON response containing a short
         // reply plus a list of structured actions (add_item / change_theme) to execute.
         async function callGeminiAI(userText) {
-            const systemInstruction = `You are the in-app assistant for "Chronicle", a personal media tracker (anime, animation movies, movies, TV series, video games).
+            const systemInstruction = `You are the in-app assistant for "Chronicle", a personal media tracker (anime, animation movies, movies, TV series, video games, music).
 The user will ask you things in English or Arabic, sometimes shorthand (e.g. "Iron man 1&2&3" means three separate items: "Iron Man", "Iron Man 2", "Iron Man 3"). Expand shorthand like "123" or "1&2&3" after a title into that many separate numbered/titled entries using your knowledge of the real franchise entries when you know them. For a request like "add the whole MCU", use your knowledge of the real Marvel Cinematic Universe release list (movies AND relevant series) to generate the actual entries - don't just add one vague "MCU" item.
 Each message includes a JSON array called CURRENT_LIBRARY with the user's existing items (title, category, year, status). Use it to:
 - Answer questions about what the user already has (e.g. "do I have X", "what am I currently watching", "how many anime do I have") directly and accurately in "reply", based only on CURRENT_LIBRARY.
@@ -2487,21 +2531,22 @@ Each message includes a JSON array called CURRENT_LIBRARY with the user's existi
   - "animemovie" = any animated movie, whether Japanese (Studio Ghibli, anime films) OR Western/other (Kung Fu Panda, Shrek, Zootopia, any Pixar/DreamWorks/Disney animated film) - all animated movies go in "animemovie", NEVER in "movie".
   - "movie" = live-action movies only.
   - "game" = video games.
+  - "music" = songs. For "music" items you MUST also include an "artist" field with the performing artist's name (e.g. "Thriller" by Michael Jackson) - this is required so the app can find the exact right song, since many songs share titles. When asked for a "top 10" / "best of" / discography-style request for an artist (e.g. "top 10 Michael Jackson songs"), use your own knowledge of their real, well-known tracks to generate that many real song titles - don't invent fake song names.
 Respond with ONLY a single valid JSON object, no markdown, no code fences, matching this exact shape:
 {
   "reply": "short friendly message in the same language the user used - a confirmation for actions, or a direct answer for questions about their library",
   "actions": [
-    { "type": "add_item", "title": "string", "category": "anime|animemovie|movie|series|game", "year": number|null, "status": "completed|watching|planto|dropped" },
+    { "type": "add_item", "title": "string", "category": "anime|animemovie|movie|series|game|music", "artist": "string (required only when category is music, otherwise omit)", "year": number|null, "status": "completed|watching|planto|dropped" },
     { "type": "delete_item", "title": "string" },
     { "type": "change_theme", "theme": "chronicle|dark|light|cyberpunk|ocean|forest|purple-galaxy|amoled|sunset|mint|rose|slate" }
   ]
 }
 Rules:
-- If the user doesn't specify a status for items they want added, default to "completed".
+- If the user doesn't specify a status for items they want added, default to "completed" (for music, "completed" just means it's in their library/playlist).
 - Never invent a personal rating (1-10) for the user; leave it out entirely.
 - If the user asks a question or something unrelated to adding media or changing the theme, just set "actions" to an empty array and answer normally in "reply".
 - "actions" must always be an array, even if empty.
-- Be decisive, not cautious: if the user gives you a list of titles (even a plain list of just movies, just games, etc. with no extra detail), add every one of them as "add_item" actions right away using your best judgment for category/year/status. Do NOT reply asking the user to clarify or confirm first - a partial or single-category list is a perfectly normal request, not something that needs clarification. Only ask a clarifying question in "reply" (with empty "actions") when the request is genuinely impossible to act on at all (e.g. no title given whatsoever).
+- Be decisive, not cautious: if the user gives you a list of titles (even a plain list of just movies, just games, just songs, etc. with no extra detail), add every one of them as "add_item" actions right away using your best judgment for category/year/status. Do NOT reply asking the user to clarify or confirm first - a partial or single-category list is a perfectly normal request, not something that needs clarification. Only ask a clarifying question in "reply" (with empty "actions") when the request is genuinely impossible to act on at all (e.g. no title given whatsoever).
 - If the user asks you to delete/remove an existing item (matched against CURRENT_LIBRARY), always include a "delete_item" action for it - never refuse and never just say you can't. If they then also ask to re-add it (e.g. "delete X and add it again", "remove X then re-add it as watching"), include both the "delete_item" action and a fresh "add_item" action for it in the same response - deletes are applied before adds, so this works even though the title still matches CURRENT_LIBRARY right now.`;
 
             // Multi-turn memory: send the actual conversation so far (skipping the transient
@@ -2554,13 +2599,14 @@ Rules:
         // an item Gemini wants to add, using the same sources the manual "Add" search box uses,
         // picked by category. For movies/series it also fetches the TMDb details endpoint since
         // the search endpoint alone doesn't include runtime/season/episode counts.
-        async function fetchCoverForAI(title, category) {
+        async function fetchCoverForAI(title, category, artist) {
             try {
                 let results = [];
                 if (category === 'anime') results = await searchAnimeAll(title);
                 else if (category === 'movie' || category === 'animemovie') results = await searchTMDb(title, 'movie');
                 else if (category === 'series') results = await searchTMDb(title, 'tv');
                 else if (category === 'game') results = await searchGamesAll(title);
+                else if (category === 'music') results = await searchMusic(artist ? `${artist} ${title}` : title);
                 const best = results && results[0] ? results[0] : null;
                 if (!best) return null;
                 if (best.tmdbId && (category === 'movie' || category === 'series' || category === 'animemovie')) {
@@ -2615,7 +2661,7 @@ Rules:
                 existingKeys.add(key); // guard against duplicates within the same batch too
                 const category = VALID_CATEGORIES.includes(action.category) ? action.category : 'movie';
                 const status = VALID_STATUSES.includes(action.status) ? action.status : 'completed';
-                const match = await fetchCoverForAI(action.title, category);
+                const match = await fetchCoverForAI(action.title, category, action.artist);
                 const item = {
                     id: (Date.now() + idx).toString(),
                     title: String(action.title),
@@ -2633,6 +2679,9 @@ Rules:
                     if ((category === 'anime' || category === 'series' || category === 'movie' || category === 'animemovie') && match.duration) item.duration = match.duration;
                     if (category === 'series' && match.seasons) item.seasons = match.seasons;
                     if (category === 'game' && match.platform) item.platform = match.platform;
+                    if (category === 'music') { item.artist = match.artist || action.artist || ''; item.album = match.album || ''; }
+                } else if (category === 'music' && action.artist) {
+                    item.artist = action.artist;
                 }
                 return { skipped: false, item };
             }));
@@ -2694,6 +2743,23 @@ Rules:
             document.getElementById('lightbox').classList.remove('active');
         }
 
+        // --- MUSIC PLAYBACK (YouTube embed, no key/backend needed) ---
+        // Plays a song by embedding YouTube's own search-and-play iframe with the
+        // title + artist as the query - YouTube returns and autoplays the top match.
+        // No API key, no OAuth, no backend: just an <iframe src> pointing at YouTube.
+        function playMusic(id) {
+            const item = state.data.find(i => i.id === id);
+            if (!item) return;
+            const query = [item.title, item.artist].filter(Boolean).join(' ');
+            document.getElementById('musicPlayerTitle').innerText = [item.title, item.artist].filter(Boolean).join(' — ');
+            document.getElementById('musicPlayerFrame').src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}&autoplay=1`;
+            document.getElementById('musicPlayerModal').classList.add('active');
+        }
+        function closeMusicPlayer() {
+            document.getElementById('musicPlayerModal').classList.remove('active');
+            document.getElementById('musicPlayerFrame').src = ''; // stop playback
+        }
+
         // --- LIVE SEARCH (Jikan / TMDb / RAWG) ---
         let searchDebounceTimer = null;
         let searchRequestId = 0; // guards against a slow older request overwriting a newer one
@@ -2721,7 +2787,8 @@ Rules:
                 { cat: 'anime', run: searchAnimeAll(query) },
                 { cat: 'movie', run: searchTMDb(query, 'movie') },
                 { cat: 'series', run: searchTMDb(query, 'tv') },
-                { cat: 'game', run: searchGamesAll(query) }
+                { cat: 'game', run: searchGamesAll(query) },
+                { cat: 'music', run: searchMusic(query) }
             ];
 
             const settled = await Promise.allSettled(sources.map(s => s.run));
@@ -2942,6 +3009,25 @@ Rules:
             return merged;
         }
 
+        async function searchMusic(query) {
+            // iTunes Search API - free, no key, no signup, supports CORS out of the box.
+            // Returns song title, artist, album, year and high-res cover art. Used both
+            // for the manual "Add" search box and for the AI assistant's music lookups.
+            const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=6`);
+            if (!res.ok) throw new Error('iTunes request failed: ' + res.status);
+            const data = await res.json();
+            return (data.results || []).map(s => ({
+                title: s.trackName || query,
+                artist: s.artistName || '',
+                album: s.collectionName || '',
+                year: s.releaseDate ? s.releaseDate.slice(0, 4) : '',
+                extra: s.artistName || '',
+                // artworkUrl100 -> swap for a much larger version so it doesn't look blurry
+                // on a square card/cover.
+                cover: s.artworkUrl100 ? s.artworkUrl100.replace('100x100bb', '600x600bb') : ''
+            }));
+        }
+
         // The TMDb search endpoint doesn't include runtime/season/episode counts - those only
         // come from the details endpoint, so we fetch them once a specific result is picked.
         async function fetchTMDbDetails(id, type) {
@@ -2986,6 +3072,12 @@ Rules:
             if (cat === 'game' && r.platform) {
                 const platField = document.getElementById('itemPlatform');
                 if (platField) platField.value = r.platform;
+            }
+            if (cat === 'music') {
+                const artistField = document.getElementById('itemArtist');
+                if (artistField && r.artist) artistField.value = r.artist;
+                const albumField = document.getElementById('itemAlbum');
+                if (albumField && r.album) albumField.value = r.album;
             }
 
             if (r.cover) {
@@ -3046,7 +3138,9 @@ Rules:
                 airingDay: document.getElementById('itemAiringDay')?.value || '',
                 airingTime: document.getElementById('itemAiringTime')?.value || '',
                 platform: document.getElementById('itemPlatform')?.value || '',
-                hoursPlayed: document.getElementById('itemHours')?.value || ''
+                hoursPlayed: document.getElementById('itemHours')?.value || '',
+                artist: document.getElementById('itemArtist')?.value || '',
+                album: document.getElementById('itemAlbum')?.value || ''
             };
 
             container.innerHTML = '';
@@ -3080,6 +3174,11 @@ Rules:
                 container.innerHTML = `
                     <div style="grid-column:1/-1"><label>${t('duration')}</label><input type="number" id="itemDuration" class="input" placeholder="120"></div>
                 `;
+            } else if (cat === 'music') {
+                container.innerHTML = `
+                    <div><label>${t('artist')}</label><input type="text" id="itemArtist" class="input" placeholder="e.g. Michael Jackson"></div>
+                    <div><label>${t('album')}</label><input type="text" id="itemAlbum" class="input" placeholder="e.g. Thriller"></div>
+                `;
             }
 
             // Restore any preserved values that have a matching field in the new form.
@@ -3090,6 +3189,8 @@ Rules:
             if (document.getElementById('itemAiringTime')) document.getElementById('itemAiringTime').value = preserved.airingTime;
             if (document.getElementById('itemPlatform')) document.getElementById('itemPlatform').value = preserved.platform;
             if (document.getElementById('itemHours')) document.getElementById('itemHours').value = preserved.hoursPlayed;
+            if (document.getElementById('itemArtist')) document.getElementById('itemArtist').value = preserved.artist;
+            if (document.getElementById('itemAlbum')) document.getElementById('itemAlbum').value = preserved.album;
         }
 
         document.getElementById('addForm').addEventListener('submit', async (e) => {
@@ -3134,6 +3235,9 @@ Rules:
                 item.hoursPlayed = document.getElementById('itemHours')?.value;
             } else if (cat === 'movie' || cat === 'animemovie') {
                 item.duration = document.getElementById('itemDuration')?.value;
+            } else if (cat === 'music') {
+                item.artist = document.getElementById('itemArtist')?.value;
+                item.album = document.getElementById('itemAlbum')?.value;
             }
 
             const existingIndex = state.data.findIndex(i => i.id === id);
@@ -3174,6 +3278,10 @@ Rules:
                 detCoverEl.style.aspectRatio = '16/9';
                 detCoverEl.style.width = '100%';
                 detCoverEl.style.maxWidth = '320px';
+            } else if (currentItem.category === 'music') {
+                detCoverEl.style.aspectRatio = '1/1';
+                detCoverEl.style.width = '200px';
+                detCoverEl.style.maxWidth = '';
             } else {
                 detCoverEl.style.aspectRatio = '2/3';
                 detCoverEl.style.width = '200px';
@@ -3184,6 +3292,7 @@ Rules:
             document.getElementById('detImdbBadge').classList.toggle('hidden', !currentItem.rating || !isWatchable);
             document.getElementById('detGameBadge').classList.toggle('hidden', !currentItem.rating || currentItem.category !== 'game');
             document.getElementById('detNotes').innerText = currentItem.notes || '-';
+            document.getElementById('detListenBtn').classList.toggle('hidden', currentItem.category !== 'music');
 
             const chips = [];
             if (currentItem.year) chips.push({ label: t('year'), value: currentItem.year });
@@ -3197,6 +3306,9 @@ Rules:
                 if (currentItem.hoursPlayed) chips.push({ label: t('hoursPlayed'), value: currentItem.hoursPlayed });
             } else if (currentItem.category === 'movie' || currentItem.category === 'animemovie') {
                 if (currentItem.duration) chips.push({ label: t('duration'), value: currentItem.duration + ' ' + t('minuteShort') });
+            } else if (currentItem.category === 'music') {
+                if (currentItem.artist) chips.push({ label: t('artist'), value: currentItem.artist });
+                if (currentItem.album) chips.push({ label: t('album'), value: currentItem.album });
             }
             document.getElementById('detStatsGrid').innerHTML = chips.map(c => `
                 <div class="detail-stat-chip"><span class="chip-label">${c.label}</span><span class="chip-value">${c.value}</span></div>
@@ -3240,6 +3352,9 @@ Rules:
                 } else if (currentItem.category === 'game') {
                     if(document.getElementById('itemPlatform')) document.getElementById('itemPlatform').value = currentItem.platform || '';
                     if(document.getElementById('itemHours')) document.getElementById('itemHours').value = currentItem.hoursPlayed || '';
+                } else if (currentItem.category === 'music') {
+                    if(document.getElementById('itemArtist')) document.getElementById('itemArtist').value = currentItem.artist || '';
+                    if(document.getElementById('itemAlbum')) document.getElementById('itemAlbum').value = currentItem.album || '';
                 }
             }, 50);
 
