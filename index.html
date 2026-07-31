@@ -919,6 +919,7 @@
                 all: "All", anime: "Anime", movie: "Movies", series: "TV Series", game: "Games", music: "Music", search: "Search...",
                 artist: "Artist", album: "Album", listen: "Listen", musicPlayerNote: "Streamed live from YouTube - no account or download needed.",
                 musicLoading: "Finding a working video...", musicUnavailable: "Couldn't find a playable video for this song. Try again, or edit the artist name for a more precise match.",
+                musicKeyError: "YouTube API key error - make sure the 'YouTube Data API v3' is enabled for this key in Google Cloud Console.",
                 episodes: "Total Episodes", seasons: "Seasons", duration: "Duration (mins)", platform: "Platform", hoursPlayed: "Hours Played",
                 language: "Language", theme: "Theme", exportData: "Export Backup", importData: "Import Backup",
                 achievementUnlocked: "Achievement Unlocked!", nothingHere: "No items found. Start adding some!",
@@ -958,6 +959,7 @@
                 all: "الكل", anime: "أنمي", movie: "أفلام", series: "مسلسلات", game: "ألعاب", music: "موسيقى", search: "ابحث...",
                 artist: "الفنان", album: "الألبوم", listen: "استماع", musicPlayerNote: "يُبث مباشرة من يوتيوب - بدون حساب أو تحميل.",
                 musicLoading: "جارٍ إيجاد فيديو يعمل...", musicUnavailable: "تعذّر إيجاد فيديو قابل للتشغيل لهذه الأغنية. جرّب مجدداً، أو عدّل اسم الفنان لمطابقة أدق.",
+                musicKeyError: "مشكلة بمفتاح YouTube API - تأكد إنك فعّلت 'YouTube Data API v3' لهذا المفتاح من Google Cloud Console.",
                 episodes: "إجمالي الحلقات", seasons: "عدد المواسم", duration: "المدة (بالدقائق)", platform: "المنصة", hoursPlayed: "ساعات اللعب",
                 language: "اللغة", theme: "المظهر", exportData: "تصدير نسخة احتياطية", importData: "استيراد نسخة احتياطية",
                 achievementUnlocked: "إنجاز جديد!", nothingHere: "لا توجد عناصر بعد، ابدأ بإضافة أول عنصر!",
@@ -1085,7 +1087,7 @@
         // because it can land on a result with embedding disabled and can't retry.
         // Get a free key: console.cloud.google.com -> new project -> enable "YouTube Data
         // API v3" -> Credentials -> Create API Key. No OAuth, no billing required for this.
-        const YOUTUBE_API_KEY = "PUT_YOUR_YOUTUBE_API_KEY_HERE";
+        const YOUTUBE_API_KEY = "AIzaSyDpCL1oZLf9d4vMZXPFrw319B4jRIVlUmM";
         // Gemini API key - used by the "AI" tab to add multiple items at once and change the theme via natural language.
         // Each user enters and stores their OWN key locally (Settings page → "Gemini API Key"). It lives only
         // in that browser's localStorage and is never bundled into the source or synced anywhere, so it can't
@@ -2788,14 +2790,20 @@ Rules:
                 frame.classList.remove('hidden');
             } catch (e) {
                 console.error('Music playback lookup failed', e);
-                statusEl.innerText = t('musicUnavailable');
+                statusEl.innerText = (e && e.httpStatus === 403) ? t('musicKeyError') : t('musicUnavailable');
             }
         }
 
         async function findYouTubeVideoId(query) {
             if (YOUTUBE_API_KEY.includes('PUT_YOUR_YOUTUBE_API_KEY_HERE')) return null; // no key set -> caller falls back
             const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=1&q=${encodeURIComponent(query)}&key=${YOUTUBE_API_KEY}`);
-            if (!res.ok) throw new Error('YouTube search failed: ' + res.status);
+            if (!res.ok) {
+                let reason = res.status;
+                try { const errBody = await res.json(); reason = errBody?.error?.message || reason; } catch (_) {}
+                const err = new Error('YouTube search failed: ' + reason);
+                err.httpStatus = res.status;
+                throw err;
+            }
             const data = await res.json();
             return (data.items && data.items[0] && data.items[0].id && data.items[0].id.videoId) || null;
         }
