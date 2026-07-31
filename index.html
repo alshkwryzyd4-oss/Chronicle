@@ -873,8 +873,9 @@
                 <button onclick="closeMusicPlayer()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             <div class="modal-body">
-                <div style="position:relative; width:100%; aspect-ratio:16/9; border-radius:10px; overflow:hidden; background:#000;">
-                    <iframe id="musicPlayerFrame" src="" style="position:absolute; inset:0; width:100%; height:100%; border:0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                <div style="position:relative; width:100%; aspect-ratio:16/9; border-radius:10px; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">
+                    <div id="musicPlayerStatus" style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;"></div>
+                    <iframe id="musicPlayerFrame" src="" class="hidden" style="position:absolute; inset:0; width:100%; height:100%; border:0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                 </div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.6rem;" data-i18n="musicPlayerNote">Streamed live from YouTube - no account or download needed.</p>
             </div>
@@ -917,6 +918,7 @@
                 totalItems: "Total Items", totalTime: "Total Time Spent", favCount: "Favorites",
                 all: "All", anime: "Anime", movie: "Movies", series: "TV Series", game: "Games", music: "Music", search: "Search...",
                 artist: "Artist", album: "Album", listen: "Listen", musicPlayerNote: "Streamed live from YouTube - no account or download needed.",
+                musicLoading: "Finding a working video...", musicUnavailable: "Couldn't find a playable video for this song. Try again, or edit the artist name for a more precise match.",
                 episodes: "Total Episodes", seasons: "Seasons", duration: "Duration (mins)", platform: "Platform", hoursPlayed: "Hours Played",
                 language: "Language", theme: "Theme", exportData: "Export Backup", importData: "Import Backup",
                 achievementUnlocked: "Achievement Unlocked!", nothingHere: "No items found. Start adding some!",
@@ -955,6 +957,7 @@
                 totalItems: "عدد العناصر", totalTime: "إجمالي وقت المشاهدة", favCount: "عدد المفضلة",
                 all: "الكل", anime: "أنمي", movie: "أفلام", series: "مسلسلات", game: "ألعاب", music: "موسيقى", search: "ابحث...",
                 artist: "الفنان", album: "الألبوم", listen: "استماع", musicPlayerNote: "يُبث مباشرة من يوتيوب - بدون حساب أو تحميل.",
+                musicLoading: "جارٍ إيجاد فيديو يعمل...", musicUnavailable: "تعذّر إيجاد فيديو قابل للتشغيل لهذه الأغنية. جرّب مجدداً، أو عدّل اسم الفنان لمطابقة أدق.",
                 episodes: "إجمالي الحلقات", seasons: "عدد المواسم", duration: "المدة (بالدقائق)", platform: "المنصة", hoursPlayed: "ساعات اللعب",
                 language: "اللغة", theme: "المظهر", exportData: "تصدير نسخة احتياطية", importData: "استيراد نسخة احتياطية",
                 achievementUnlocked: "إنجاز جديد!", nothingHere: "لا توجد عناصر بعد، ابدأ بإضافة أول عنصر!",
@@ -1076,6 +1079,13 @@
         // TMDb and RAWG need a free key from your own account - see the setup guide for how to get one.
         const TMDB_API_KEY = "72f7f751d47757575230f64d2645359e";   // used for Movies and TV Series search
         const RAWG_API_KEY = "PUT_YOUR_RAWG_API_KEY_HERE";   // used for Video Games search
+        // Used to look up a specific, embeddable YouTube video ID for the Music "Listen"
+        // button. Optional but strongly recommended - without it, playback falls back to
+        // YouTube's old listType=search embed, which frequently shows "video unavailable"
+        // because it can land on a result with embedding disabled and can't retry.
+        // Get a free key: console.cloud.google.com -> new project -> enable "YouTube Data
+        // API v3" -> Credentials -> Create API Key. No OAuth, no billing required for this.
+        const YOUTUBE_API_KEY = "PUT_YOUR_YOUTUBE_API_KEY_HERE";
         // Gemini API key - used by the "AI" tab to add multiple items at once and change the theme via natural language.
         // Each user enters and stores their OWN key locally (Settings page → "Gemini API Key"). It lives only
         // in that browser's localStorage and is never bundled into the source or synced anywhere, so it can't
@@ -2743,18 +2753,53 @@ Rules:
             document.getElementById('lightbox').classList.remove('active');
         }
 
-        // --- MUSIC PLAYBACK (YouTube embed, no key/backend needed) ---
-        // Plays a song by embedding YouTube's own search-and-play iframe with the
-        // title + artist as the query - YouTube returns and autoplays the top match.
-        // No API key, no OAuth, no backend: just an <iframe src> pointing at YouTube.
-        function playMusic(id) {
+        // --- MUSIC PLAYBACK (YouTube, no backend/OAuth needed) ---
+        // Plays a song by finding one specific, real YouTube video ID for it and embedding
+        // that directly. This is far more reliable than YouTube's old listType=search
+        // embed, which frequently shows "video unavailable" because it can land on a
+        // result with embedding disabled (age-restricted, blocked, VEVO-only, etc.) with
+        // no way to retry. If no YouTube API key is configured, falls back to the old
+        // search-embed as a best-effort (with a note that it may occasionally fail).
+        async function playMusic(id) {
             const item = state.data.find(i => i.id === id);
             if (!item) return;
             const query = [item.title, item.artist].filter(Boolean).join(' ');
+            const modal = document.getElementById('musicPlayerModal');
+            const frame = document.getElementById('musicPlayerFrame');
+            const statusEl = document.getElementById('musicPlayerStatus');
             document.getElementById('musicPlayerTitle').innerText = [item.title, item.artist].filter(Boolean).join(' — ');
-            document.getElementById('musicPlayerFrame').src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}&autoplay=1`;
-            document.getElementById('musicPlayerModal').classList.add('active');
+            frame.src = '';
+            frame.classList.add('hidden');
+            statusEl.classList.remove('hidden');
+            statusEl.innerText = t('musicLoading');
+            modal.classList.add('active');
+
+            try {
+                const videoId = await findYouTubeVideoId(query);
+                if (videoId) {
+                    frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                } else {
+                    // No YouTube API key configured - fall back to the legacy search-embed.
+                    // Less reliable (can occasionally land on a non-embeddable video and show
+                    // "video unavailable"), but works with zero setup.
+                    frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}&autoplay=1`;
+                }
+                statusEl.classList.add('hidden');
+                frame.classList.remove('hidden');
+            } catch (e) {
+                console.error('Music playback lookup failed', e);
+                statusEl.innerText = t('musicUnavailable');
+            }
         }
+
+        async function findYouTubeVideoId(query) {
+            if (YOUTUBE_API_KEY.includes('PUT_YOUR_YOUTUBE_API_KEY_HERE')) return null; // no key set -> caller falls back
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=1&q=${encodeURIComponent(query)}&key=${YOUTUBE_API_KEY}`);
+            if (!res.ok) throw new Error('YouTube search failed: ' + res.status);
+            const data = await res.json();
+            return (data.items && data.items[0] && data.items[0].id && data.items[0].id.videoId) || null;
+        }
+
         function closeMusicPlayer() {
             document.getElementById('musicPlayerModal').classList.remove('active');
             document.getElementById('musicPlayerFrame').src = ''; // stop playback
