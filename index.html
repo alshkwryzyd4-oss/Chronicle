@@ -12,7 +12,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* --- THEME & VARIABLES --- */
         :root {
@@ -29,7 +29,7 @@
             --success: #10b981;
             --warning: #f59e0b;
             --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            --font-display: 'Quicksand', system-ui, sans-serif;
+            --font-display: 'Outfit', system-ui, sans-serif;
             --radius: 8px;
             --transition: 0.3s ease;
         }
@@ -132,27 +132,83 @@
         .btn:disabled:hover { background-color: var(--surface); }
         .btn-danger { background-color: var(--danger); color: #fff; }
 
-        .input { width: 100%; padding: 0.75rem; border-radius: var(--radius); background-color: var(--bg); border: 1px solid var(--border); color: var(--text); margin-bottom: 1rem; }
+        .input {
+            width: 100%; padding: 0.75rem; border-radius: var(--radius);
+            background-color: var(--bg);
+            background-color: color-mix(in srgb, var(--bg) 55%, transparent);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            backdrop-filter: blur(14px) saturate(160%);
+            border: 1px solid var(--border); color: var(--text); margin-bottom: 1rem;
+        }
         .input:focus { border-color: var(--primary); }
         
-        .card { background-color: var(--surface); border-radius: var(--radius); padding: 1rem; border: 1px solid var(--border); }
+        .card {
+            background-color: var(--surface);
+            background-color: color-mix(in srgb, var(--surface) 68%, transparent);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            backdrop-filter: blur(18px) saturate(180%);
+            border-radius: var(--radius); padding: 1rem;
+            border: 1px solid var(--border);
+            border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+        }
         .ai-chat-card { max-height: calc(100vh - 160px); max-height: calc(100dvh - 160px); }
         .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.25rem; }
         .ai-bubble { max-width: 80%; padding: 0.6rem 0.85rem; border-radius: 14px; font-size: 0.92rem; line-height: 1.45; white-space: pre-wrap; }
         .ai-bubble-bot { align-self: flex-start; background-color: var(--bg); border: 1px solid var(--border); border-start-start-radius: 4px; }
+        .ai-bubble-bot.ai-thinking { display: flex; align-items: center; gap: 5px; padding: 0.75rem 1rem; }
+        .ai-thinking-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: var(--primary);
+            opacity: 0.4; animation: aiThinkingBounce 1.1s ease-in-out infinite;
+        }
+        .ai-thinking-dot:nth-child(2) { animation-delay: 0.15s; }
+        .ai-thinking-dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes aiThinkingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-5px); opacity: 1; }
+        }
         .ai-bubble-user { align-self: flex-end; background-color: var(--primary); color: #fff; border-end-end-radius: 4px; }
-        .media-card { position: relative; border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: transform var(--transition); background-color: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column;}
-        .media-card:hover { transform: translateY(-5px); border-color: var(--primary); }
-        .media-cover { width: 100%; aspect-ratio: 2/3; object-fit: cover; background-color: var(--bg); }
-        .media-info { padding: 0.75rem; flex: 1; display: flex; flex-direction: column; }
+        .media-card { position: relative; border-radius: 18px; overflow: visible; cursor: pointer; transition: transform var(--transition); background-color: transparent; border: none; display: flex; flex-direction: column;}
+        .media-card:hover { transform: translateY(-5px); }
+        .media-card:hover .media-info { border-color: color-mix(in srgb, var(--primary) 55%, transparent); }
+        .media-cover { width: 100%; aspect-ratio: 2/3; object-fit: cover; background-color: var(--bg); border-radius: 18px; box-shadow: 0 8px 22px rgba(0,0,0,0.35); position: relative; z-index: 0; }
+        /* Floating frosted-glass caption that overlaps the bottom of the poster art, so the
+           artwork itself is what's being blurred behind it - real Liquid Glass, not a flat panel. */
+        .media-info {
+            position: relative; z-index: 1; margin: -44px 6px 0; padding: 0.7rem 0.85rem;
+            display: flex; flex-direction: column; border-radius: 14px;
+            background: var(--surface);
+            background: color-mix(in srgb, var(--surface) 55%, transparent);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            backdrop-filter: blur(18px) saturate(180%);
+            border: 1px solid var(--border);
+            border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+            transition: border-color var(--transition);
+        }
         .media-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .media-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
-        .badge { position: absolute; top: 0.5rem; inset-inline-end: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; background: rgba(0,0,0,0.7); color: #fff; }
+        .badge {
+            position: absolute; top: 0.5rem; inset-inline-end: 0.5rem; z-index: 2; padding: 0.25rem 0.55rem; border-radius: 999px;
+            font-size: 0.75rem; font-weight: bold; color: #fff;
+            background: rgba(0,0,0,0.55);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+            backdrop-filter: blur(10px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
         .imdb-badge { display: inline-flex; align-items: center; gap: 0.3rem; width: fit-content; background: #f5c518; color: #000; font-weight: 800; font-size: 0.78rem; padding: 0.2rem 0.55rem; border-radius: 4px; letter-spacing: 0.01em; font-family: Arial, Helvetica, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); margin-top: 0.35rem; }
         .game-badge { display: inline-flex; align-items: center; gap: 0.35rem; width: fit-content; background: #1a1a1a; color: #fff; font-weight: 700; font-size: 0.78rem; padding: 0.25rem 0.6rem; border-radius: 4px; letter-spacing: 0.01em; font-family: Arial, Helvetica, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); margin-top: 0.35rem; border: 1px solid #444; }
 
         /* --- SIDEBAR --- */
-        .sidebar { width: 250px; background-color: var(--surface); border-inline-end: 1px solid var(--border); display: flex; flex-direction: column; transition: transform var(--transition); z-index: 50; }
+        .sidebar {
+            width: 250px;
+            background-color: var(--surface);
+            background-color: color-mix(in srgb, var(--surface) 72%, transparent);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            backdrop-filter: blur(22px) saturate(180%);
+            border-inline-end: 1px solid var(--border);
+            border-inline-end: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+            display: flex; flex-direction: column; transition: transform var(--transition); z-index: 50;
+        }
         .brand { padding: 1.5rem; font-size: 1.5rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border); }
         .nav-items { flex: 1; overflow-y: auto; padding: 1rem 0; }
         .nav-item { padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; color: var(--text-muted); font-weight: 500; cursor: pointer; transition: all var(--transition); }
@@ -188,51 +244,102 @@
         }
 
         .bottom-tab-bar {
-            position: fixed; bottom: 0; inset-inline: 0; height: calc(64px + env(safe-area-inset-bottom, 0px)); z-index: 60;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-            background: var(--surface); border-top: 1px solid var(--border);
-            display: flex; box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
-            transform: translateY(0); transition: transform 0.28s ease;
+            /* iOS 27 "Liquid Glass" style: a floating pill detached from the edges, so the
+               page content is visible (blurred, not hidden) behind and around it, instead of
+               a solid bar covering the full width. */
+            position: fixed;
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            left: 50%; transform: translateX(-50%);
+            width: min(92vw, 440px); height: 62px; z-index: 60;
+            border-radius: 999px; padding: 5px;
+            /* Real frosted glass: strong blur + saturation so whatever scrolls behind it reads
+               as soft shapes/colors, never full detail - falls back to solid --surface on
+               browsers without color-mix()/backdrop-filter support (older Android WebViews). */
+            background: var(--surface);
+            background: color-mix(in srgb, var(--surface) 38%, transparent);
+            -webkit-backdrop-filter: blur(34px) saturate(200%);
+            backdrop-filter: blur(34px) saturate(200%);
+            border: 1px solid var(--border);
+            border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+            display: flex;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.12);
+            transition: transform 0.32s cubic-bezier(.4,0,.2,1), opacity 0.32s ease;
         }
-        .bottom-tab-bar.tab-bar-hidden { transform: translateY(100%); }
+        .bottom-tab-bar.tab-bar-hidden { transform: translateX(-50%) translateY(160%); }
         .bottom-tab-btn {
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 3px; color: var(--text-muted); font-size: 0.62rem; font-weight: 600;
-            transition: color 0.25s ease, transform 0.25s ease;
+            gap: 2px; color: var(--text-muted); font-size: 0.58rem; font-weight: 600;
+            position: relative; z-index: 1; border-radius: 999px;
+            transition: color 0.25s ease;
         }
-        .bottom-tab-btn svg { width: 24px; height: 24px; transition: transform 0.25s ease; }
+        /* Selected pill "capsule" behind the active icon, tinted with the current theme color;
+           it disappears (falls back to gray icon) the moment another tab is chosen. */
+        .bottom-tab-btn::before {
+            content: ''; position: absolute; inset: 2px; border-radius: 999px; z-index: -1;
+            background: transparent; transform: scale(0.85); opacity: 0;
+            transition: background-color 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+        }
+        .bottom-tab-btn svg { width: 22px; height: 22px; transition: transform 0.25s ease; }
         .bottom-tab-btn.active { color: var(--primary); }
-        .bottom-tab-btn.active svg { transform: translateY(-2px) scale(1.1); }
+        .bottom-tab-btn.active::before {
+            background: color-mix(in srgb, var(--primary) 20%, transparent);
+            transform: scale(1); opacity: 1;
+        }
+        .bottom-tab-btn.active svg { transform: translateY(-1px) scale(1.08); }
         .bottom-tab-btn:active svg { transform: scale(0.9); }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         .ai-fab {
-            position: fixed; bottom: 80px; inset-inline-end: 18px; z-index: 61;
+            position: fixed; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); inset-inline-end: 18px; z-index: 61;
             width: 52px; height: 52px; border-radius: 50%;
-            background-color: var(--primary); color: #fff;
+            background-color: var(--primary);
+            background-color: color-mix(in srgb, var(--primary) 80%, transparent);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            backdrop-filter: blur(14px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: #fff;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.35);
             transition: transform 0.25s ease, background-color var(--transition), bottom 0.28s ease, opacity 0.28s ease;
         }
-        .ai-fab:hover { background-color: var(--primary-hover); }
+        .ai-fab:hover { background-color: var(--primary-hover); background-color: color-mix(in srgb, var(--primary-hover) 85%, transparent); }
         .ai-fab:active { transform: scale(0.92); }
         .ai-fab.active { box-shadow: 0 0 0 3px var(--primary) inset, 0 4px 14px rgba(0,0,0,0.35); }
         .ai-fab.fab-hidden { transform: translateY(140%); opacity: 0; pointer-events: none; }
         body:has(.modal-overlay.active) .ai-fab { transform: translateY(140%); opacity: 0; pointer-events: none; }
-        .header { height: 60px; background-color: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem; justify-content: space-between; }
-        .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; padding-bottom: 76px; transition: transform 0.3s ease; }
+        .header {
+            height: 60px;
+            background-color: var(--surface);
+            background-color: color-mix(in srgb, var(--surface) 70%, transparent);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            backdrop-filter: blur(22px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+            display: flex; align-items: center; padding: 0 1.5rem; justify-content: space-between;
+        }
+        .content-area { flex: 1; overflow-y: auto; padding: 1.5rem; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transition: transform 0.3s ease; }
 
         /* --- MODALS --- */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity var(--transition); backdrop-filter: blur(4px); }
         .modal-overlay.active { opacity: 1; pointer-events: all; }
-        .modal-content { background-color: var(--surface); border-radius: var(--radius); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); transform: translateY(20px); transition: transform var(--transition); }
+        .modal-content {
+            background-color: var(--surface);
+            background-color: color-mix(in srgb, var(--surface) 75%, transparent);
+            -webkit-backdrop-filter: blur(26px) saturate(180%);
+            backdrop-filter: blur(26px) saturate(180%);
+            border-radius: 18px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+            border: 1px solid var(--border);
+            border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+            transform: translateY(20px); transition: transform var(--transition);
+        }
         .modal-overlay.active .modal-content { transform: translateY(0); }
         .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .modal-body { padding: 1.5rem; }
 
         /* --- SPECIFIC VIEWS --- */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .stat-card { text-align: center; padding: 1.5rem; }
-        .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.6rem; margin-bottom: 1.5rem; }
+        .stat-card { text-align: center; padding: 0.75rem 0.5rem; border-radius: 14px; }
+        .stat-value { font-size: 1.3rem; font-weight: 700; font-family: var(--font-display); color: var(--primary); }
+        .stat-card > div:last-child { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
         
         .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; }
         
@@ -329,6 +436,43 @@
         @keyframes loginRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         #loginScreen .brand-lg { font-size: 2.25rem; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 0.75rem; }
         #loginScreen p { color: var(--text-muted); max-width: 340px; }
+
+        /* --- CONNECT / SYNC LOADING UI (glass) --- */
+        .connect-progress-wrap {
+            width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 0.6rem;
+        }
+        .connect-progress-track {
+            width: 100%; height: 10px; border-radius: 999px; overflow: hidden;
+            background: var(--surface);
+            background: color-mix(in srgb, var(--surface) 55%, transparent);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+        }
+        .connect-progress-fill {
+            height: 100%; width: 0%; border-radius: 999px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-hover, var(--primary)));
+            box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 70%, transparent);
+            transition: width 0.45s cubic-bezier(.4,0,.2,1);
+        }
+        .connect-progress-label { font-size: 0.78rem; color: var(--text-muted); min-height: 1.1em; }
+        .connect-status-pill {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 999px;
+            background: var(--surface);
+            background: color-mix(in srgb, var(--surface) 55%, transparent);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+            font-size: 0.85rem; color: var(--text);
+        }
+        .connect-status-dot {
+            width: 9px; height: 9px; border-radius: 50%; background: var(--warning);
+            animation: connectPulse 1.3s ease-in-out infinite;
+            box-shadow: 0 0 8px var(--warning);
+        }
+        .connect-status-pill.is-online .connect-status-dot { background: var(--success); box-shadow: 0 0 8px var(--success); animation: none; }
+        @keyframes connectPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.7); } }
+        .google-btn[disabled] { opacity: 0.45; pointer-events: none; }
         .google-btn { display: flex; align-items: center; gap: 0.75rem; background: #fff; color: #1f1f1f; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.25); transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .google-btn:hover { background: #f5f5f5; transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.3); }
         #loginStatus { color: var(--text-muted); font-size: 0.9rem; min-height: 1.2rem; }
@@ -368,23 +512,36 @@
 </head>
 <body>
 
-    <!-- Login Screen (only shown when the user chooses to manage cloud backup - never blocks entry) -->
+    <!-- Connect Screen: shown on every load until we're online, signed in, and your Drive
+         data has been fetched. There is no offline/guest mode anymore - this gate always
+         has to clear before the app itself is shown, so we never render stale/empty state. -->
     <div id="loginScreen">
-        <button id="loginScreenClose" onclick="cancelAccountSwitch()" title="Close" style="position:absolute; top:1rem; inset-inline-end:1rem; background:var(--surface); border:1px solid var(--border); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--text);">
+        <button id="loginScreenClose" onclick="cancelAccountSwitch()" title="Close" style="position:absolute; top:1rem; inset-inline-end:1rem; background:var(--surface); border:1px solid var(--border); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--text); display:none;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
         <div class="brand-lg">
-            <img src="data:image/png;base64,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" alt="Chronicle" style="height:40px; width:auto;">
+            <img src="data:image/png;base64,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" alt="Chronicle" style="height:40px; width:auto;">
             Chronicle
         </div>
-        <p id="loginDesc">Your archive already works fully offline on this device. Sign in with Google only if you want to back it up and sync it across other devices.<br>أرشيفك يعمل بالكامل محليًا على هذا الجهاز. سجّل الدخول بحساب Google فقط إذا أردت نسخه احتياطيًا ومزامنته عبر أجهزة أخرى.</p>
+        <p id="loginDesc">Chronicle now lives in your Google Drive, so your archive is never at risk of being lost or overwritten. Sign in to continue.<br>سجلّاتي الآن محفوظة في Google Drive الخاص بك، فلا يضيع أرشيفك ولا يُستبدل بالخطأ أبدًا. سجّل الدخول للمتابعة.</p>
+
+        <div id="connectStatusPill" class="connect-status-pill">
+            <span class="connect-status-dot"></span>
+            <span id="connectStatusText">Checking your connection... / جارٍ التحقق من الاتصال...</span>
+        </div>
+
+        <div id="connectProgressWrap" class="connect-progress-wrap hidden">
+            <div class="connect-progress-track"><div id="connectProgressFill" class="connect-progress-fill"></div></div>
+            <div id="connectProgressLabel" class="connect-progress-label"></div>
+        </div>
+
         <div id="accountPicker" class="flex gap-4 hidden" style="flex-wrap:wrap; justify-content:center; max-width:400px;"></div>
-        <button class="google-btn" id="mainSignInBtn" onclick="signIn()">
+        <button class="google-btn hidden" id="mainSignInBtn" onclick="signIn()">
             <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.6 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 6 29.5 4 24 4 16 4 9.1 8.5 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.3c-2 1.4-4.6 2.3-7.2 2.3-5.3 0-9.7-3.1-11.3-7.7l-6.5 5C9 39.6 15.9 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.3C40.5 36.3 44 30.7 44 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
             <span id="signInLabel">Sign in with Google / تسجيل الدخول بحساب Google</span>
         </button>
         <div id="loginStatus"></div>
-        <p style="font-size:0.75rem; opacity:0.6; max-width:340px;">Your data is stored privately in your own Google account.<br>بياناتك تُحفظ بشكل خاص في حساب Google الخاص بك فقط.</p>
+        <p style="font-size:0.75rem; opacity:0.6; max-width:340px;">Your data is stored privately in your own Google account. An internet connection is required to use Chronicle.<br>بياناتك تُحفظ بشكل خاص في حساب Google الخاص بك فقط. يلزم الاتصال بالإنترنت لاستخدام سجلّاتي.</p>
         <div class="site-credit">Chronicle <span class="heart">♥</span> by Zayd Chkouri</div>
     </div>
 
@@ -450,6 +607,39 @@
             content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--primary);
         }
         .cs-option[data-disabled="true"] .cs-radio { display: none; }
+
+        /* ---- Long-press bubble menu (media cards) ---- */
+        .media-card { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        .media-card.card-pressing { transform: scale(0.96); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+        .bubble-menu-backdrop { position: fixed; inset: 0; z-index: 250; background: transparent; }
+
+        .bubble-menu {
+            position: fixed; z-index: 251; min-width: 190px; max-width: 240px;
+            background: var(--surface);
+            background: color-mix(in srgb, var(--surface) 82%, transparent);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border);
+            border-radius: 14px; padding: 6px; overflow: hidden;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07);
+            opacity: 0; transform: scale(0.82); transform-origin: var(--bubble-origin-x, 50%) var(--bubble-origin-y, 100%);
+            transition: opacity 0.16s ease, transform 0.24s cubic-bezier(.34, 1.56, .64, 1);
+        }
+        .bubble-menu.bubble-menu-visible { opacity: 1; transform: scale(1); }
+        .bubble-menu-item {
+            display: flex; align-items: center; gap: 10px; width: 100%; text-align: start;
+            padding: 0.68rem 0.75rem; border-radius: 9px; background: transparent; border: none;
+            color: var(--text); font-family: inherit; font-size: 0.88rem; font-weight: 500;
+            cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background-color 0.12s ease;
+        }
+        .bubble-menu-item:hover, .bubble-menu-item:active { background-color: var(--surface-hover); }
+        .bubble-menu-icon { display: flex; flex-shrink: 0; width: 18px; height: 18px; color: var(--text-muted); }
+        .bubble-menu-item.bubble-menu-danger { color: var(--danger); }
+        .bubble-menu-item.bubble-menu-danger .bubble-menu-icon { color: var(--danger); }
+        @media (prefers-reduced-motion: reduce) {
+            .bubble-menu { transition: opacity 0.12s ease; transform: none !important; }
+        }
     </style>
 
     <div id="appContainer" class="hidden">
@@ -703,10 +893,11 @@
                 aiSend: "Send", aiThinking: "Thinking...", aiClear: "Clear chat",
                 aiWelcome: "Hi! Tell me what to add or change - e.g. \"Add Iron Man 1&2&3, Avengers 1&2&3 and Wakanda as movies\" or \"switch to the ocean theme\". I can handle several requests at once.",
                 aiKeyMissing: "No Gemini API key is set. Go to Settings → Gemini API Key, add your free key from Google AI Studio, and try again.",
-                aiError: "Something went wrong talking to Gemini.", aiItemsAdded: "Added to your library", aiItemsSkipped: "Already in your library, skipped", aiThemeChanged: "Theme changed",
+                aiError: "Something went wrong talking to Gemini.", aiItemsAdded: "Added to your library", aiItemsSkipped: "Already in your library, skipped", aiItemsDeleted: "Removed from your library", aiThemeChanged: "Theme changed",
                 geminiKeyLabel: "Gemini API Key", geminiKeyDesc: "Needed for the AI Assistant tab. Get a free key at aistudio.google.com/apikey — it's stored only on this device and is never uploaded anywhere.",
                 geminiKeyPlaceholder: "Paste your Gemini API key here", geminiKeySave: "Save key", geminiKeyClear: "Remove key",
-                geminiKeySaved: "Gemini API key saved.", geminiKeyRemoved: "Gemini API key removed.", geminiKeySet: "Key set ✓"
+                geminiKeySaved: "Gemini API key saved.", geminiKeyRemoved: "Gemini API key removed.", geminiKeySet: "Key set ✓",
+                removeFromFav: "Remove from Favorites", markCompleted: "Mark as Completed"
             },
             ar: {
                 appName: "سجلّاتي", dashboard: "الرئيسية", library: "مكتبتي", watchingNow: "أشاهدها الآن",
@@ -739,10 +930,11 @@
                 aiSend: "إرسال", aiThinking: "جارٍ التفكير...", aiClear: "مسح المحادثة",
                 aiWelcome: "أهلًا! أخبرني بما تريد إضافته أو تغييره - مثلاً \"أضف Iron Man 1&2&3 وAvengers 1&2&3 وWakanda كأفلام\" أو \"غيّر الثيم إلى المحيط\". يمكنني تنفيذ عدة طلبات دفعة واحدة.",
                 aiKeyMissing: "لم يتم إعداد مفتاح Gemini API. اذهب إلى الإعدادات ← مفتاح Gemini API، أضف مفتاحك المجاني من Google AI Studio، ثم أعد المحاولة.",
-                aiError: "حدث خطأ أثناء التواصل مع Gemini.", aiItemsAdded: "تمت الإضافة لمكتبتك", aiItemsSkipped: "موجودة مسبقًا، تم تخطّيها", aiThemeChanged: "تم تغيير الثيم",
+                aiError: "حدث خطأ أثناء التواصل مع Gemini.", aiItemsAdded: "تمت الإضافة لمكتبتك", aiItemsSkipped: "موجودة مسبقًا، تم تخطّيها", aiItemsDeleted: "تم حذفها من مكتبتك", aiThemeChanged: "تم تغيير الثيم",
                 geminiKeyLabel: "مفتاح Gemini API", geminiKeyDesc: "مطلوب لتبويب المساعد الذكي. احصل على مفتاح مجاني من aistudio.google.com/apikey — يُخزَّن فقط على هذا الجهاز ولا يُرفع لأي مكان أبدًا.",
                 geminiKeyPlaceholder: "ألصق مفتاح Gemini API هنا", geminiKeySave: "حفظ المفتاح", geminiKeyClear: "إزالة المفتاح",
-                geminiKeySaved: "تم حفظ مفتاح Gemini API.", geminiKeyRemoved: "تمت إزالة مفتاح Gemini API.", geminiKeySet: "المفتاح مُعدّ ✓"
+                geminiKeySaved: "تم حفظ مفتاح Gemini API.", geminiKeyRemoved: "تمت إزالة مفتاح Gemini API.", geminiKeySet: "المفتاح مُعدّ ✓",
+                removeFromFav: "إزالة من المفضلة", markCompleted: "وضع علامة كمكتملة"
             }
         };
 
@@ -969,8 +1161,8 @@
                 el.innerHTML = `
                     <div class="avatar-fallback">☁</div>
                     <div class="acc-info">
-                        <div class="acc-name">${state.settings.lang === 'ar' ? 'حفظ محلي' : 'Saved locally'}</div>
-                        <div class="acc-email">${state.settings.lang === 'ar' ? 'اضغط لتفعيل النسخ السحابي' : 'Tap to enable cloud backup'}</div>
+                        <div class="acc-name">${state.settings.lang === 'ar' ? 'غير مسجّل الدخول' : 'Not signed in'}</div>
+                        <div class="acc-email">${state.settings.lang === 'ar' ? 'اضغط لتسجيل الدخول' : 'Tap to sign in'}</div>
                     </div>
                 `;
                 return;
@@ -987,107 +1179,139 @@
         }
 
         function openAccountSwitcher() {
-            // Go back to the login screen to pick a different account, without deleting saved data
-            // (currentAccount is left as-is so local data keeps working if the user backs out)
+            // Return to the connect screen to pick a different Google account. Data already
+            // loaded stays in memory; cancelAccountSwitch() puts the user right back if they back out.
             accessToken = null;
             driveFileId = null;
             signInLock = false;
             renderAccountPicker();
+            document.getElementById('loginScreenClose').style.display = 'flex';
+            document.getElementById('mainSignInBtn').classList.remove('hidden');
+            hideConnectProgress();
             document.getElementById('appContainer').classList.add('hidden');
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('loginStatus').innerText = '';
         }
 
-        // Lets the user back out of the account picker and return straight to the app,
-        // since signing in with Google is optional (only needed for cross-device backup).
+        // Only usable once the app has already loaded successfully this session - lets the
+        // user back out of an account switch without losing what's already showing.
         function cancelAccountSwitch() {
+            if (!appAlreadyRendered) return;
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appContainer').classList.remove('hidden');
-            appAlreadyRendered = true;
         }
 
         let signInLock = false; // prevents two overlapping sign-in attempts from racing each other
+
+        // --- CONNECT GATE (glass loading screen) ---
+        // There is no offline/guest mode anymore: every load has to clear this gate - online,
+        // signed in, real Drive data fetched - before the app itself is shown. This is what
+        // prevents the old data-loss bug, where the app could render with empty/stale state
+        // and later push that over your real Drive data.
+        function setConnectStatus(text, online) {
+            const pill = document.getElementById('connectStatusPill');
+            const label = document.getElementById('connectStatusText');
+            if (label) label.innerText = text;
+            if (pill) pill.classList.toggle('is-online', !!online);
+        }
+        function setConnectProgress(pct, label) {
+            const wrap = document.getElementById('connectProgressWrap');
+            const fill = document.getElementById('connectProgressFill');
+            const lbl = document.getElementById('connectProgressLabel');
+            if (wrap) wrap.classList.remove('hidden');
+            if (fill) fill.style.width = pct + '%';
+            if (lbl && label != null) lbl.innerText = label;
+        }
+        function hideConnectProgress() {
+            const wrap = document.getElementById('connectProgressWrap');
+            if (wrap) { wrap.classList.add('hidden'); }
+            const fill = document.getElementById('connectProgressFill');
+            if (fill) fill.style.width = '0%';
+        }
+
+        function beginConnectFlow() {
+            document.getElementById('loginStatus').innerText = '';
+            if (!navigator.onLine) {
+                setConnectStatus(document.documentElement.lang === 'ar' ? '📴 بانتظار الاتصال بالإنترنت...' : '📴 Waiting for an internet connection...', false);
+                window.addEventListener('online', proceedOnline, { once: true });
+                return;
+            }
+            proceedOnline();
+        }
+        function proceedOnline() {
+            setConnectStatus(document.documentElement.lang === 'ar' ? '✓ متصل بالإنترنت' : '✓ Online', true);
+            initGoogleAuth();
+        }
 
         function initGoogleAuth() {
             if (typeof google === 'undefined' || !google.accounts) {
                 setTimeout(initGoogleAuth, 200); // GIS script may still be loading
                 return;
             }
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
-                scope: DRIVE_SCOPE,
-                callback: async (response) => {
-                    if (response.error) {
-                        signInLock = false;
-                        // A silent, automatic attempt failing quietly is expected - only show an error
-                        // message if the user explicitly asked to sign in.
-                        if (!autoAttemptInProgress) {
-                            const msg = (document.documentElement.lang === 'ar' ? "فشل تسجيل الدخول: " : "Sign-in failed: ") + response.error;
-                            if (appAlreadyRendered) setSyncStatus('⚠ ' + msg, true);
-                            else document.getElementById('loginStatus').innerText = msg;
+            if (!tokenClient) {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: DRIVE_SCOPE,
+                    callback: async (response) => {
+                        if (response.error) {
+                            signInLock = false;
+                            autoAttemptInProgress = false;
+                            document.getElementById('mainSignInBtn').classList.remove('hidden');
+                            document.getElementById('loginStatus').innerText =
+                                document.documentElement.lang === 'ar' ? "يلزم تسجيل الدخول للمتابعة" : "Please sign in to continue";
+                            return;
                         }
                         autoAttemptInProgress = false;
-                        return;
-                    }
-                    autoAttemptInProgress = false;
-                    accessToken = response.access_token;
-                    try {
-                        currentAccount = await fetchUserProfile(accessToken);
-                        upsertAccount(currentAccount);
-                        localStorage.setItem(LAST_EMAIL_KEY, currentAccount.email);
-                    } catch (e) {
-                        console.error('Could not fetch profile', e);
-                    }
-                    if (appAlreadyRendered) {
-                        // The app is already showing (loaded instantly from the local offline
-                        // cache) - just reconcile quietly with Drive in the background, no reload.
-                        renderSidebarAccountWidget();
+                        accessToken = response.access_token;
+                        try {
+                            currentAccount = await fetchUserProfile(accessToken);
+                            upsertAccount(currentAccount);
+                            localStorage.setItem(LAST_EMAIL_KEY, currentAccount.email);
+                        } catch (e) {
+                            console.error('Could not fetch profile', e);
+                        }
                         signInLock = false;
-                        await backgroundSync();
-                        return;
+                        renderSidebarAccountWidget();
+                        await loadFromDriveWithProgress();
                     }
-                    document.getElementById('loginStatus').innerText =
-                        document.documentElement.lang === 'ar' ? "جارٍ تحميل بياناتك..." : "Loading your data...";
-                    await initApp();
-                    appAlreadyRendered = true;
-                    signInLock = false;
-                    renderSidebarAccountWidget();
-                    document.getElementById('loginScreen').classList.add('hidden');
-                    document.getElementById('appContainer').classList.remove('hidden');
-                }
-            });
+                });
+            }
             renderAccountPicker();
-            if (navigator.onLine) attemptSilentSignIn();
+            if (localStorage.getItem(LAST_EMAIL_KEY)) attemptSilentSignIn();
+            else document.getElementById('mainSignInBtn').classList.remove('hidden');
         }
 
         let autoAttemptInProgress = false;
         function attemptSilentSignIn() {
             // Best-effort: try to sign the user back in automatically using the last used
-            // account, so they don't have to tap "Sign in" every time they open the site.
-            // This can silently fail (e.g. session expired, browser blocked it, offline) - in
-            // that case the app just keeps working from its local offline copy.
+            // account, so they don't have to tap "Sign in" every time. If it doesn't work out
+            // (session expired, popup blocked, etc.) the manual Sign in button is shown instead -
+            // there's no local fallback to fall back to anymore.
             const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
-            if (!lastEmail || GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE') || signInLock || !navigator.onLine) return;
+            if (!lastEmail || GOOGLE_CLIENT_ID.includes('PUT_YOUR_CLIENT_ID_HERE') || signInLock) {
+                document.getElementById('mainSignInBtn').classList.remove('hidden');
+                return;
+            }
             signInLock = true;
             autoAttemptInProgress = true;
-            if (!appAlreadyRendered) {
-                document.getElementById('loginStatus').innerText =
-                    document.documentElement.lang === 'ar' ? "جارٍ محاولة تسجيل الدخول التلقائي..." : "Trying automatic sign-in...";
-            }
+            document.getElementById('loginStatus').innerText =
+                document.documentElement.lang === 'ar' ? "جارٍ تسجيل الدخول..." : "Signing in...";
             try {
                 tokenClient.requestAccessToken({ prompt: '', hint: lastEmail });
             } catch (e) {
                 autoAttemptInProgress = false;
                 signInLock = false;
+                document.getElementById('mainSignInBtn').classList.remove('hidden');
             }
-            // Clear the "trying..." message after a moment if nothing happened (e.g. popup blocked)
+            // If nothing happened after a moment (e.g. popup blocked), fall back to the button.
             setTimeout(() => {
                 if (autoAttemptInProgress) {
                     autoAttemptInProgress = false;
                     signInLock = false;
-                    if (!appAlreadyRendered) document.getElementById('loginStatus').innerText = '';
+                    document.getElementById('loginStatus').innerText = '';
+                    document.getElementById('mainSignInBtn').classList.remove('hidden');
                 }
-            }, 4000);
+            }, 6000);
         }
 
         function signInAs(email) {
@@ -1137,52 +1361,75 @@
 
         // --- CORE FUNCTIONS ---
 
-        async function initApp() {
-            let loadedLocally = false;
-            if (currentAccount) {
-                try {
-                    const record = await idbGet(currentAccount.email);
-                    if (record && record.state) {
-                        state = record.state;
-                        lastSyncedAt = record.lastSyncedAt || 0;
-                        loadedLocally = true;
-                    }
-                } catch (e) { console.error('IndexedDB read failed', e); }
-            }
-            if (!loadedLocally && accessToken && navigator.onLine) {
-                // No local copy yet for this account on this device - pull whatever is on Drive
-                try { await pullFromDriveIfNewer(); } catch (e) { console.error(e); }
-            }
-            normalizeTop10();
-            if (!state.settings.sortBy) state.settings.sortBy = 'dateAdded';
-            if (!state.settings.sortDir) state.settings.sortDir = 'desc';
-            applySettings();
-            renderSidebar();
-            renderSidebarAccountWidget();
-            navigate('dashboard');
-            if (loadedLocally) {
-                if (accessToken && navigator.onLine) backgroundSync();
-                else setSyncStatus(navigator.onLine
-                    ? ''
-                    : (state.settings.lang === 'ar' ? '📴 غير متصل - العمل محليًا' : '📴 Offline - working locally'), false);
+        // Pulls the user's real data from Drive with a visible progress bar. This always runs
+        // right after a fresh sign-in (silent or manual) and always finishes before the app is
+        // shown, so the app is guaranteed to start from the true Drive state - never an empty
+        // or stale local copy that could later get pushed up and overwrite real data.
+        async function loadFromDriveWithProgress() {
+            const isAr = document.documentElement.lang === 'ar';
+            document.getElementById('loginStatus').innerText = '';
+            document.getElementById('mainSignInBtn').classList.add('hidden');
+            setConnectStatus(isAr ? '✓ تم تسجيل الدخول' : '✓ Signed in', true);
+            setConnectProgress(12, isAr ? 'جارٍ الاتصال بـ Google Drive...' : 'Connecting to Google Drive...');
+            try {
+                setConnectProgress(35, isAr ? 'جارٍ البحث عن أرشيفك...' : 'Locating your archive...');
+                const fileId = await findDriveFile();
+                if (!fileId) {
+                    driveFileId = null;
+                    lastSyncedAt = Date.now();
+                    setConnectProgress(85, isAr ? 'حساب جديد - سيُنشأ أرشيفك الآن' : 'New account - your archive will be created');
+                } else {
+                    driveFileId = fileId;
+                    setConnectProgress(65, isAr ? 'جارٍ تنزيل بياناتك...' : 'Downloading your data...');
+                    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                        headers: { Authorization: `Bearer ${accessToken}` }
+                    });
+                    if (!res.ok) throw new Error('Drive download failed: ' + res.status);
+                    const parsed = await res.json();
+                    state.data = parsed.data || [];
+                    state.settings = parsed.settings || state.settings || { lang: 'en', theme: 'chronicle' };
+                    state.unlockedAchievements = parsed.unlockedAchievements || [];
+                    state.top10 = parsed.top10 || { anime: [], animemovie: [], series: [], movies: [], games: [] };
+                    lastSyncedAt = Date.now();
+                    setConnectProgress(90, isAr ? 'جارٍ التجهيز...' : 'Finishing up...');
+                }
+                normalizeTop10();
+                if (!state.settings.sortBy) state.settings.sortBy = 'dateAdded';
+                if (!state.settings.sortDir) state.settings.sortDir = 'desc';
+                if (currentAccount) {
+                    try { await idbSet(currentAccount.email, { state, savedAt: lastSyncedAt, lastSyncedAt }); } catch (e) { console.error(e); }
+                }
+                applySettings();
+                renderSidebar();
+                renderSidebarAccountWidget();
+                navigate('dashboard');
+                setConnectProgress(100, isAr ? '✓ اكتمل' : '✓ Done');
+                setSyncStatus('', false);
+                setTimeout(() => {
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('appContainer').classList.remove('hidden');
+                    appAlreadyRendered = true;
+                    hideConnectProgress();
+                }, 300);
+            } catch (e) {
+                console.error('Failed to load from Drive', e);
+                setConnectStatus(isAr ? '⚠ تعذّر الوصول إلى Drive' : '⚠ Could not reach Drive', false);
+                hideConnectProgress();
+                document.getElementById('loginStatus').innerText =
+                    (isAr ? 'فشل تحميل بياناتك، حاول مجددًا: ' : 'Failed to load your data, please retry: ') + e.message;
+                document.getElementById('mainSignInBtn').classList.remove('hidden'); // let them retry
             }
         }
 
-        // Boot the app straight in - no login screen, no required action. If this browser has
-        // signed in with Google before, we quietly pick up that account (for Drive backup);
-        // otherwise we just use the local, on-device copy of the library. Either way the app
-        // opens immediately and works fully offline.
+        // Boot: always start at the connect gate. No offline/guest mode - the app only ever
+        // renders once we're online, signed in, and your real Drive data has been fetched.
         async function boot() {
             const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
             if (lastEmail) {
                 const stored = getStoredAccounts().find(a => a.email === lastEmail);
                 if (stored) currentAccount = stored;
             }
-            await initApp(); // loads instantly from IndexedDB (local copy, or this account's copy)
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('appContainer').classList.remove('hidden');
-            appAlreadyRendered = true;
-            initGoogleAuth(); // sets up optional sign-in; will quietly refresh/sync in the background if online
+            beginConnectFlow();
         }
 
         async function findDriveFile() {
@@ -1269,17 +1516,19 @@
 
         function saveState() {
             checkAchievements();
-            // Always persist locally right away (instant, works fully offline)
+            // Cache locally right away as a safety net (instant), then push to Drive - the
+            // single source of truth. This is not an offline mode: if the connection is down,
+            // we just say so and retry as soon as it's back, instead of silently pretending
+            // the local copy is authoritative.
             const savedAt = Date.now();
             if (currentAccount) {
                 idbSet(currentAccount.email, { state, savedAt, lastSyncedAt }).catch(e => console.error('IndexedDB save failed', e));
             }
-            // Then push to Drive in the background, only if we're online and signed in
             if (accessToken && navigator.onLine) {
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(saveStateToDrive, 150);
             } else {
-                setSyncStatus(state.settings.lang === 'ar' ? '💾 محفوظ محليًا (غير متصل)' : '💾 Saved locally (offline)', false);
+                setSyncStatus(state.settings.lang === 'ar' ? '⚠ الاتصال مفقود - سيُحفظ في Drive فور عودته' : '⚠ Connection lost - will save to Drive once back online', true);
             }
         }
 
@@ -1297,7 +1546,8 @@
             }
         });
 
-        // Come back online -> sync automatically. Go offline -> just say so, keep working locally.
+        // Come back online -> sync automatically. Go offline -> flag it clearly (no silent
+        // "offline mode" - the user should know their last edits haven't reached Drive yet).
         window.addEventListener('online', () => {
             if (!appAlreadyRendered) return;
             setSyncStatus(state.settings.lang === 'ar' ? 'عاد الاتصال - جارٍ المزامنة...' : 'Back online - syncing...', false);
@@ -1306,7 +1556,7 @@
         });
         window.addEventListener('offline', () => {
             if (!appAlreadyRendered) return;
-            setSyncStatus(state.settings.lang === 'ar' ? '📴 غير متصل - العمل محليًا' : '📴 Offline - working locally', false);
+            setSyncStatus(state.settings.lang === 'ar' ? '⚠ انقطع الاتصال - سيُعاد الحفظ تلقائيًا عند عودته' : '⚠ Connection lost - will resync automatically once back online', true);
         });
 
         function setSyncStatus(text, isError) {
@@ -1319,7 +1569,7 @@
         async function saveStateToDrive() {
             if (!accessToken) return;
             if (!navigator.onLine) {
-                setSyncStatus(state.settings.lang === 'ar' ? '💾 محفوظ محليًا (غير متصل)' : '💾 Saved locally (offline)', false);
+                setSyncStatus(state.settings.lang === 'ar' ? '⚠ الاتصال مفقود - سيُحفظ في Drive فور عودته' : '⚠ Connection lost - will save to Drive once back online', true);
                 return;
             }
             setSyncStatus(state.settings.lang === 'ar' ? 'جارٍ الحفظ...' : 'Saving...', false);
@@ -1363,7 +1613,7 @@
 
         function manualSaveToDrive() {
             if (!navigator.onLine) {
-                setSyncStatus(state.settings.lang === 'ar' ? '💾 محفوظ محليًا بالفعل - سيُرفع عند الاتصال' : '💾 Already saved locally - will upload once online', false);
+                setSyncStatus(state.settings.lang === 'ar' ? '⚠ الاتصال مفقود - سيُحفظ في Drive فور عودته' : '⚠ Connection lost - will save to Drive once back online', true);
                 return;
             }
             clearTimeout(saveTimeout);
@@ -1624,7 +1874,7 @@
             const coverSrc = item.cover || `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='150' fill='${encodeURIComponent('var(--surface-hover)')}'><rect width='100%' height='100%'/></svg>`;
             const badgeColor = item.status === 'completed' ? 'var(--success)' : (item.status === 'watching' ? 'var(--primary)' : 'var(--warning)');
             return `
-                <div class="media-card" data-title="${item.title}" onclick="openDetails('${item.id}')">
+                <div class="media-card" data-id="${item.id}" data-title="${item.title}" onclick="openDetails('${item.id}')">
                     <img src="${coverSrc}" class="media-cover" alt="${item.title}">
                     <span class="badge" style="background:${badgeColor}">${t(item.status)}</span>
                     <div class="media-info">
@@ -1675,7 +1925,7 @@
         function generateScheduleCard(item) {
             const coverSrc = item.cover || `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='150' fill='${encodeURIComponent('var(--surface-hover)')}'><rect width='100%' height='100%'/></svg>`;
             return `
-                <div class="media-card" data-title="${item.title}" onclick="openDetails('${item.id}')">
+                <div class="media-card" data-id="${item.id}" data-title="${item.title}" onclick="openDetails('${item.id}')">
                     <img src="${coverSrc}" class="media-cover" alt="${item.title}">
                     ${item.airingTime ? `<span class="badge" style="background:var(--primary)">${item.airingTime}</span>` : ''}
                     <div class="media-info">
@@ -1991,7 +2241,7 @@
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
                         ${currentAccount && currentAccount.email !== LOCAL_ACCOUNT.email ? `
                         <p style="color:var(--text-muted); font-size:0.85rem;">
-                            ${state.settings.lang === 'ar' ? 'بياناتك محفوظة محليًا وتُنسخ احتياطيًا إلى Google Drive الخاص بحسابك.' : 'Your data is stored locally and backed up to your Google Drive account.'}
+                            ${state.settings.lang === 'ar' ? 'بياناتك محفوظة في Google Drive الخاص بحسابك وهي المصدر الرئيسي لها - يلزم الاتصال بالإنترنت لاستخدام سجلّاتي.' : 'Your data lives in your Google Drive account - that is its source of truth. An internet connection is required to use Chronicle.'}
                         </p>
                         <button class="btn btn-primary" onclick="manualSaveToDrive()">
                             ${state.settings.lang === 'ar' ? 'حفظ الآن في Google Drive' : 'Save now to Google Drive'}
@@ -2002,12 +2252,13 @@
                         <div id="syncStatusSettings" style="font-size:0.85rem; color:var(--text-muted); min-height:1.2rem;"></div>
                         ` : `
                         <p style="color:var(--text-muted); font-size:0.85rem;">
-                            ${state.settings.lang === 'ar' ? 'أرشيفك محفوظ محليًا على هذا الجهاز فقط. سجّل الدخول بحساب Google لنسخه احتياطيًا ومزامنته عبر أجهزتك الأخرى (اختياري).' : "Your archive is saved locally on this device only. Sign in with Google to back it up and sync it across your other devices (optional)."}
+                            ${state.settings.lang === 'ar' ? 'يلزم تسجيل الدخول بحساب Google لاستخدام سجلّاتي - بياناتك تُحفظ في Drive الخاص بحسابك فقط.' : "Signing in with Google is required to use Chronicle - your data is stored only in your own Drive account."}
                         </p>
                         <button class="btn btn-primary" onclick="openAccountSwitcher()">
-                            ${state.settings.lang === 'ar' ? 'تفعيل النسخ الاحتياطي السحابي' : 'Enable cloud backup'}
+                            ${state.settings.lang === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
                         </button>
                         `}
+
 
                         ${currentAccount && currentAccount.email !== LOCAL_ACCOUNT.email ? `
                         <div style="height:1px; background:var(--border); margin: 1rem 0;"></div>
@@ -2114,8 +2365,9 @@
             if (aiChatLog.length === 0) {
                 wrap.innerHTML = `<div class="ai-bubble ai-bubble-bot">${t('aiWelcome')}</div>`;
             } else {
-                wrap.innerHTML = aiChatLog.map(m =>
-                    `<div class="ai-bubble ${m.role === 'user' ? 'ai-bubble-user' : 'ai-bubble-bot'}">${escapeHtml(m.text)}</div>`
+                wrap.innerHTML = aiChatLog.map(m => m.thinking
+                    ? `<div class="ai-bubble ai-bubble-bot ai-thinking"><span class="ai-thinking-dot"></span><span class="ai-thinking-dot"></span><span class="ai-thinking-dot"></span></div>`
+                    : `<div class="ai-bubble ${m.role === 'user' ? 'ai-bubble-user' : 'ai-bubble-bot'}">${escapeHtml(m.text)}</div>`
                 ).join('');
             }
             wrap.scrollTop = wrap.scrollHeight;
@@ -2158,7 +2410,7 @@
             aiBusy = true;
             const sendBtn = document.getElementById('aiSendBtn');
             if (sendBtn) sendBtn.disabled = true;
-            aiChatLog.push({ role: 'bot', text: t('aiThinking') });
+            aiChatLog.push({ role: 'bot', text: t('aiThinking'), thinking: true });
             renderAIMessages();
 
             try {
@@ -2212,6 +2464,7 @@ Respond with ONLY a single valid JSON object, no markdown, no code fences, match
   "reply": "short friendly message in the same language the user used - a confirmation for actions, or a direct answer for questions about their library",
   "actions": [
     { "type": "add_item", "title": "string", "category": "anime|animemovie|movie|series|game", "year": number|null, "status": "completed|watching|planto|dropped" },
+    { "type": "delete_item", "title": "string" },
     { "type": "change_theme", "theme": "chronicle|dark|light|cyberpunk|ocean|forest|purple-galaxy|amoled|sunset|mint|rose|slate" }
   ]
 }
@@ -2219,7 +2472,9 @@ Rules:
 - If the user doesn't specify a status for items they want added, default to "completed".
 - Never invent a personal rating (1-10) for the user; leave it out entirely.
 - If the user asks a question or something unrelated to adding media or changing the theme, just set "actions" to an empty array and answer normally in "reply".
-- "actions" must always be an array, even if empty.`;
+- "actions" must always be an array, even if empty.
+- Be decisive, not cautious: if the user gives you a list of titles (even a plain list of just movies, just games, etc. with no extra detail), add every one of them as "add_item" actions right away using your best judgment for category/year/status. Do NOT reply asking the user to clarify or confirm first - a partial or single-category list is a perfectly normal request, not something that needs clarification. Only ask a clarifying question in "reply" (with empty "actions") when the request is genuinely impossible to act on at all (e.g. no title given whatsoever).
+- If the user asks you to delete/remove an existing item (matched against CURRENT_LIBRARY), always include a "delete_item" action for it - never refuse and never just say you can't. If they then also ask to re-add it (e.g. "delete X and add it again", "remove X then re-add it as watching"), include both the "delete_item" action and a fresh "add_item" action for it in the same response - deletes are applied before adds, so this works even though the title still matches CURRENT_LIBRARY right now.`;
 
             const body = {
                 systemInstruction: { parts: [{ text: systemInstruction }] },
@@ -2290,7 +2545,20 @@ Rules:
             if (!Array.isArray(actions) || actions.length === 0) return '';
             let addedTitles = [];
             let skippedTitles = [];
+            let deletedTitles = [];
             let themeChangedTo = null;
+
+            // Deletions run first so a "delete X and add it again" request works even though
+            // X still matches CURRENT_LIBRARY at the time the AI wrote its response.
+            const deleteActions = actions.filter(a => a && a.type === 'delete_item' && a.title);
+            deleteActions.forEach(action => {
+                const key = normalizeTitleForMatch(action.title);
+                const idx = state.data.findIndex(i => normalizeTitleForMatch(i.title) === key);
+                if (idx !== -1) {
+                    deletedTitles.push(state.data[idx].title);
+                    state.data.splice(idx, 1);
+                }
+            });
 
             const existingKeys = new Set(state.data.map(i => normalizeTitleForMatch(i.title)));
 
@@ -2338,13 +2606,14 @@ Rules:
                 themeChangedTo = action.theme;
             });
 
-            if (addedTitles.length > 0 || themeChangedTo) {
+            if (addedTitles.length > 0 || deletedTitles.length > 0 || themeChangedTo) {
                 saveState();
                 if (themeChangedTo) applySettings();
                 renderSidebar();
             }
 
             const parts = [];
+            if (deletedTitles.length > 0) parts.push('🗑️ ' + t('aiItemsDeleted') + ': ' + deletedTitles.join(', '));
             if (addedTitles.length > 0) parts.push('✅ ' + t('aiItemsAdded') + ': ' + addedTitles.join(', '));
             if (skippedTitles.length > 0) parts.push('↷ ' + t('aiItemsSkipped') + ': ' + skippedTitles.join(', '));
             if (themeChangedTo) parts.push('🎨 ' + t('aiThemeChanged') + ': ' + themeChangedTo);
@@ -3142,6 +3411,148 @@ Rules:
                     }
                 }, 2500); // stay hidden for longer once scrolling settles
             }, { passive: true });
+        })();
+
+        /* ---- Long-press bubble menu on media cards: quick Edit / Favorite / Complete / Delete
+           without opening the full details modal. Uses pointer events (covers touch + mouse) with
+           a move-distance cancel so it doesn't fire while the user is scrolling the grid. ---- */
+        (function setupCardLongPress() {
+            const LONG_PRESS_MS = 500;
+            const MOVE_THRESHOLD = 10;
+            let pressTimer = null;
+            let pressedCard = null;
+            let startX = 0, startY = 0;
+            let suppressNextClick = false;
+
+            const ICONS = {
+                edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+                star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+                check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11"/></svg>',
+                trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+            };
+
+            function clearPressState() {
+                if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+                if (pressedCard) { pressedCard.classList.remove('card-pressing'); }
+                pressedCard = null;
+            }
+
+            function closeCardBubbleMenu() {
+                document.querySelectorAll('.bubble-menu-backdrop, .bubble-menu').forEach(el => el.remove());
+            }
+
+            function toggleFavoriteQuick(id) {
+                const item = state.data.find(i => i.id === id);
+                if (!item) return;
+                item.favorite = !item.favorite;
+                saveState();
+                navigate(currentView);
+            }
+
+            function markCompletedQuick(id) {
+                const item = state.data.find(i => i.id === id);
+                if (!item) return;
+                item.status = 'completed';
+                saveState();
+                navigate(currentView);
+            }
+
+            function openCardBubbleMenu(card, x, y) {
+                closeCardBubbleMenu();
+                const id = card.getAttribute('data-id');
+                const item = state.data.find(i => i.id === id);
+                if (!item) return;
+
+                const actions = [
+                    { label: t('edit'), icon: ICONS.edit, run: () => { currentItem = item; editCurrentItem(); } },
+                    { label: item.favorite ? t('removeFromFav') : t('addToFav'), icon: ICONS.star, run: () => toggleFavoriteQuick(item.id) }
+                ];
+                if (item.status !== 'completed') {
+                    actions.push({ label: t('markCompleted'), icon: ICONS.check, run: () => markCompletedQuick(item.id) });
+                }
+                actions.push({ label: t('delete'), icon: ICONS.trash, danger: true, run: () => { currentItem = item; deleteCurrentItem(); } });
+
+                const backdrop = document.createElement('div');
+                backdrop.className = 'bubble-menu-backdrop';
+                backdrop.addEventListener('click', closeCardBubbleMenu);
+
+                const menu = document.createElement('div');
+                menu.className = 'bubble-menu';
+                menu.innerHTML = actions.map((a, i) => `
+                    <button type="button" class="bubble-menu-item${a.danger ? ' bubble-menu-danger' : ''}" data-idx="${i}">
+                        <span class="bubble-menu-icon">${a.icon}</span><span>${a.label}</span>
+                    </button>
+                `).join('');
+
+                document.body.appendChild(backdrop);
+                document.body.appendChild(menu);
+
+                menu.querySelectorAll('.bubble-menu-item').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const action = actions[parseInt(btn.getAttribute('data-idx'), 10)];
+                        closeCardBubbleMenu();
+                        if (action) action.run();
+                    });
+                });
+
+                // Position near the press point, springing from that point, and clamp to viewport.
+                requestAnimationFrame(() => {
+                    const rect = menu.getBoundingClientRect();
+                    const margin = 10;
+                    let left = x - rect.width / 2;
+                    let top = y - rect.height - 14;
+                    let originY = '100%';
+                    if (top < margin) { top = y + 14; originY = '0%'; }
+                    if (left < margin) left = margin;
+                    if (left + rect.width > window.innerWidth - margin) left = window.innerWidth - margin - rect.width;
+                    if (top + rect.height > window.innerHeight - margin) top = window.innerHeight - margin - rect.height;
+                    menu.style.left = left + 'px';
+                    menu.style.top = top + 'px';
+                    menu.style.setProperty('--bubble-origin-x', (x - left) + 'px');
+                    menu.style.setProperty('--bubble-origin-y', originY);
+                    menu.classList.add('bubble-menu-visible');
+                });
+            }
+
+            document.addEventListener('pointerdown', (e) => {
+                if (e.button !== undefined && e.button > 0) return; // ignore right/middle click
+                const card = e.target.closest('.media-card');
+                if (!card || document.querySelector('.bubble-menu')) return;
+                pressedCard = card;
+                startX = e.clientX;
+                startY = e.clientY;
+                card.classList.add('card-pressing');
+                pressTimer = setTimeout(() => {
+                    pressTimer = null;
+                    suppressNextClick = true;
+                    if (pressedCard) pressedCard.classList.remove('card-pressing');
+                    openCardBubbleMenu(card, startX, startY);
+                    pressedCard = null;
+                }, LONG_PRESS_MS);
+            }, { passive: true });
+
+            document.addEventListener('pointermove', (e) => {
+                if (!pressedCard) return;
+                if (Math.abs(e.clientX - startX) > MOVE_THRESHOLD || Math.abs(e.clientY - startY) > MOVE_THRESHOLD) {
+                    clearPressState();
+                }
+            }, { passive: true });
+
+            document.addEventListener('pointerup', clearPressState);
+            document.addEventListener('pointercancel', clearPressState);
+
+            // A long-press that opens the bubble menu shouldn't also trigger the card's own
+            // click-to-open-details handler once the finger/mouse lifts.
+            document.addEventListener('click', (e) => {
+                if (suppressNextClick) {
+                    suppressNextClick = false;
+                    if (e.target.closest('.media-card')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }
+            }, true);
         })();
 
         /* ---- Custom Select Engine: converts every native <select> into a styled, in-app dropdown ---- */
