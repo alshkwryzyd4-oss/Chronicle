@@ -141,12 +141,16 @@
             border: 1px solid var(--border); color: var(--text); margin-bottom: 1rem;
         }
         .input:focus { border-color: var(--primary); }
+        .toolbar-round { border-radius: 12px !important; }
+        #librarySortRow { align-items: stretch; }
+        #librarySortRow .cs-wrapper { width: auto; flex: 1; }
+        #librarySortRow .cs-trigger { border-radius: 12px; margin-bottom: 0; }
         
         .card {
             background-color: var(--surface);
             background-color: color-mix(in srgb, var(--surface) 68%, transparent);
-            -webkit-backdrop-filter: blur(18px) saturate(180%);
-            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(160%);
+            backdrop-filter: blur(10px) saturate(160%);
             border-radius: var(--radius); padding: 1rem;
             border: 1px solid var(--border);
             border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
@@ -174,12 +178,12 @@
         /* Floating frosted-glass caption that overlaps the bottom of the poster art, so the
            artwork itself is what's being blurred behind it - real Liquid Glass, not a flat panel. */
         .media-info {
-            position: relative; z-index: 1; margin: -44px 6px 0; padding: 0.7rem 0.85rem;
+            position: relative; z-index: 1; margin: -24px 6px 0; padding: 0.7rem 0.85rem;
             display: flex; flex-direction: column; border-radius: 14px;
             background: var(--surface);
             background: color-mix(in srgb, var(--surface) 55%, transparent);
-            -webkit-backdrop-filter: blur(18px) saturate(180%);
-            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(150%);
+            backdrop-filter: blur(10px) saturate(150%);
             border: 1px solid var(--border);
             border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
             box-shadow: 0 6px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
@@ -190,9 +194,7 @@
         .badge {
             position: absolute; top: 0.5rem; inset-inline-end: 0.5rem; z-index: 2; padding: 0.25rem 0.55rem; border-radius: 999px;
             font-size: 0.75rem; font-weight: bold; color: #fff;
-            background: rgba(0,0,0,0.55);
-            -webkit-backdrop-filter: blur(10px) saturate(180%);
-            backdrop-filter: blur(10px) saturate(180%);
+            background: rgba(0,0,0,0.65);
             border: 1px solid rgba(255,255,255,0.15);
         }
         .imdb-badge { display: inline-flex; align-items: center; gap: 0.3rem; width: fit-content; background: #f5c518; color: #000; font-weight: 800; font-size: 0.78rem; padding: 0.2rem 0.55rem; border-radius: 4px; letter-spacing: 0.01em; font-family: Arial, Helvetica, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); margin-top: 0.35rem; }
@@ -203,8 +205,8 @@
             width: 250px;
             background-color: var(--surface);
             background-color: color-mix(in srgb, var(--surface) 72%, transparent);
-            -webkit-backdrop-filter: blur(22px) saturate(180%);
-            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            backdrop-filter: blur(14px) saturate(160%);
             border-inline-end: 1px solid var(--border);
             border-inline-end: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
             display: flex; flex-direction: column; transition: transform var(--transition); z-index: 50;
@@ -310,8 +312,8 @@
             height: 60px;
             background-color: var(--surface);
             background-color: color-mix(in srgb, var(--surface) 70%, transparent);
-            -webkit-backdrop-filter: blur(22px) saturate(180%);
-            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            backdrop-filter: blur(14px) saturate(160%);
             border-bottom: 1px solid var(--border);
             border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
             display: flex; align-items: center; padding: 0 1.5rem; justify-content: space-between;
@@ -337,7 +339,13 @@
 
         /* --- SPECIFIC VIEWS --- */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.6rem; margin-bottom: 1.5rem; }
-        .stat-card { text-align: center; padding: 0.75rem 0.5rem; border-radius: 14px; }
+        .stat-card {
+            text-align: center; padding: 0.75rem 0.5rem; border-radius: 14px;
+            /* Perf: these render ~9-at-a-time on the dashboard over a flat background, so a
+               real blur here is pure GPU cost with no visual payoff - use a flat tint instead. */
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+            background-color: color-mix(in srgb, var(--surface) 88%, transparent);
+        }
         .stat-value { font-size: 1.3rem; font-weight: 700; font-family: var(--font-display); color: var(--primary); }
         .stat-card > div:last-child { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
         
@@ -353,7 +361,11 @@
         .contact-link:hover { transform: translateX(3px); border-color: var(--primary); }
         [dir="rtl"] .contact-link:hover { transform: translateX(-3px); }
         .contact-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .insight-card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .insight-card {
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+            background-color: color-mix(in srgb, var(--surface) 88%, transparent);
+        }
         .insight-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.25); }
         .lightbox-overlay {
             position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.92);
@@ -1559,11 +1571,22 @@
             setSyncStatus(state.settings.lang === 'ar' ? '⚠ انقطع الاتصال - سيُعاد الحفظ تلقائيًا عند عودته' : '⚠ Connection lost - will resync automatically once back online', true);
         });
 
+        let syncStatusClearTimer = null;
         function setSyncStatus(text, isError) {
             const el = document.getElementById('syncStatus');
             if (el) { el.innerText = text; el.style.color = isError ? 'var(--danger)' : 'var(--text-muted)'; }
             const el2 = document.getElementById('syncStatusSettings');
             if (el2) { el2.innerText = text; el2.style.color = isError ? 'var(--danger)' : 'var(--text-muted)'; }
+            // A completed action (✓ ...) is a one-off confirmation, not an ongoing state - pop it
+            // as a proper notification instead of leaving it stuck in the header indefinitely.
+            if (text && !isError && text.indexOf('✓') !== -1) {
+                showToast(text);
+                clearTimeout(syncStatusClearTimer);
+                syncStatusClearTimer = setTimeout(() => {
+                    if (el && el.innerText === text) el.innerText = '';
+                    if (el2 && el2.innerText === text) el2.innerText = '';
+                }, 2200);
+            }
         }
 
         async function saveStateToDrive() {
@@ -1803,17 +1826,19 @@
             filtered = sortItems(filtered);
 
             container.innerHTML = `
-                <div class="flex gap-2" style="margin-bottom:1rem; flex-wrap:wrap;">
-                    <input type="text" id="searchInput" class="input" style="flex:1; min-width:150px; margin-bottom:0;" placeholder="${t('search')}" onkeyup="filterLibrary()">
-                    <select id="librarySortBy" class="input" style="width:auto; margin-bottom:0;" onchange="changeSort(this.value, null)">
-                        <option value="dateAdded" ${state.settings.sortBy === 'dateAdded' ? 'selected' : ''}>${t('sortDateAdded')}</option>
-                        <option value="name" ${state.settings.sortBy === 'name' ? 'selected' : ''}>${t('sortName')}</option>
-                        <option value="rating" ${state.settings.sortBy === 'rating' ? 'selected' : ''}>${t('sortRating')}</option>
-                        <option value="year" ${state.settings.sortBy === 'year' ? 'selected' : ''}>${t('sortYear')}</option>
-                    </select>
-                    <button type="button" class="btn btn-surface" style="margin-bottom:0;" onclick="changeSort(null, state.settings.sortDir === 'asc' ? 'desc' : 'asc')" title="${state.settings.sortDir === 'asc' ? t('sortAsc') : t('sortDesc')}">
-                        ${state.settings.sortDir === 'asc' ? '↑' : '↓'}
-                    </button>
+                <div style="margin-bottom:1rem;">
+                    <input type="text" id="searchInput" class="input toolbar-round" style="margin-bottom:0.6rem;" placeholder="${t('search')}" onkeyup="filterLibrary()">
+                    <div class="flex gap-2" id="librarySortRow">
+                        <select id="librarySortBy" class="input toolbar-round" style="margin-bottom:0;" onchange="changeSort(this.value, null)">
+                            <option value="dateAdded" ${state.settings.sortBy === 'dateAdded' ? 'selected' : ''}>${t('sortDateAdded')}</option>
+                            <option value="name" ${state.settings.sortBy === 'name' ? 'selected' : ''}>${t('sortName')}</option>
+                            <option value="rating" ${state.settings.sortBy === 'rating' ? 'selected' : ''}>${t('sortRating')}</option>
+                            <option value="year" ${state.settings.sortBy === 'year' ? 'selected' : ''}>${t('sortYear')}</option>
+                        </select>
+                        <button type="button" class="btn btn-surface toolbar-round" style="margin-bottom:0; flex-shrink:0;" onclick="changeSort(null, state.settings.sortDir === 'asc' ? 'desc' : 'asc')" title="${state.settings.sortDir === 'asc' ? t('sortAsc') : t('sortDesc')}">
+                            ${state.settings.sortDir === 'asc' ? '↑' : '↓'}
+                        </button>
+                    </div>
                 </div>
                 <div class="media-grid" id="libraryGrid">
                     ${filtered.length ? filtered.map(generateMediaCard).join('') : `<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:var(--text-muted)">${t('nothingHere')}</div>`}
