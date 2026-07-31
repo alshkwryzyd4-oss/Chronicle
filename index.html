@@ -175,6 +175,7 @@
         .media-card:hover { transform: translateY(-5px); }
         .media-card:hover .media-info { border-color: color-mix(in srgb, var(--primary) 55%, transparent); }
         .media-cover { width: 100%; aspect-ratio: 2/3; object-fit: cover; background-color: var(--bg); border-radius: 18px; box-shadow: 0 8px 22px rgba(0,0,0,0.35); position: relative; z-index: 0; }
+        .media-cover.media-cover-game { aspect-ratio: 16/9; }
         /* Floating frosted-glass caption that overlaps the bottom of the poster art, so the
            artwork itself is what's being blurred behind it - real Liquid Glass, not a flat panel. */
         .media-info {
@@ -191,6 +192,7 @@
         }
         .media-title { font-weight: 600; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .media-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .media-card.media-card-game .media-info { margin-top: -12px; }
         .badge {
             position: absolute; top: 0.5rem; inset-inline-end: 0.5rem; z-index: 2; padding: 0.25rem 0.55rem; border-radius: 999px;
             font-size: 0.75rem; font-weight: bold; color: #fff;
@@ -818,7 +820,7 @@
             </div>
             <div class="modal-body flex-col gap-4">
                 <div class="flex gap-6" style="flex-wrap: wrap;">
-                    <img id="detCover" class="card" style="width: 200px; aspect-ratio: 2/3; object-fit: cover; cursor: pointer;" src="" alt="Cover" onclick="event.stopPropagation(); openLightbox(this.src)" oncontextmenu="return false">
+                    <img id="detCover" class="card" style="width: 200px; object-fit: cover; cursor: pointer;" src="" alt="Cover" onclick="event.stopPropagation(); openLightbox(this.src)" oncontextmenu="return false">
                     <button class="lightbox-hint" onclick="event.stopPropagation(); openLightbox(document.getElementById('detCover').src)" aria-label="Expand image">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
                     </button>
@@ -1898,9 +1900,10 @@
         function generateMediaCard(item) {
             const coverSrc = item.cover || `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='150' fill='${encodeURIComponent('var(--surface-hover)')}'><rect width='100%' height='100%'/></svg>`;
             const badgeColor = item.status === 'completed' ? 'var(--success)' : (item.status === 'watching' ? 'var(--primary)' : 'var(--warning)');
+            const isGame = item.category === 'game';
             return `
-                <div class="media-card" data-id="${item.id}" data-title="${item.title}" onclick="openDetails('${item.id}')">
-                    <img src="${coverSrc}" class="media-cover" alt="${item.title}">
+                <div class="media-card${isGame ? ' media-card-game' : ''}" data-id="${item.id}" data-title="${item.title}" onclick="openDetails('${item.id}')">
+                    <img src="${coverSrc}" class="media-cover${isGame ? ' media-cover-game' : ''}" alt="${item.title}">
                     <span class="badge" style="background:${badgeColor}">${t(item.status)}</span>
                     <div class="media-info">
                         <div class="media-title">${item.title}</div>
@@ -2501,9 +2504,23 @@ Rules:
 - Be decisive, not cautious: if the user gives you a list of titles (even a plain list of just movies, just games, etc. with no extra detail), add every one of them as "add_item" actions right away using your best judgment for category/year/status. Do NOT reply asking the user to clarify or confirm first - a partial or single-category list is a perfectly normal request, not something that needs clarification. Only ask a clarifying question in "reply" (with empty "actions") when the request is genuinely impossible to act on at all (e.g. no title given whatsoever).
 - If the user asks you to delete/remove an existing item (matched against CURRENT_LIBRARY), always include a "delete_item" action for it - never refuse and never just say you can't. If they then also ask to re-add it (e.g. "delete X and add it again", "remove X then re-add it as watching"), include both the "delete_item" action and a fresh "add_item" action for it in the same response - deletes are applied before adds, so this works even though the title still matches CURRENT_LIBRARY right now.`;
 
+            // Multi-turn memory: send the actual conversation so far (skipping the transient
+            // "thinking" placeholder), not just this one message - otherwise the AI has no idea
+            // what it just said or asked and ends up repeating itself / re-asking from scratch.
+            // CURRENT_LIBRARY is attached only to the newest user message so it always reflects
+            // the freshest state without bloating every older turn. Capped to the last ~10 turns.
+            const historyLog = aiChatLog.filter(m => !m.thinking).slice(-20);
+            const history = historyLog.map((m, idx, arr) => {
+                const isLastUserMsg = idx === arr.length - 1 && m.role === 'user';
+                const text = isLastUserMsg
+                    ? `CURRENT_LIBRARY = ${buildLibraryContextForAI()}\n\nUser message: ${m.text}`
+                    : m.text;
+                return { role: m.role === 'user' ? 'user' : 'model', parts: [{ text }] };
+            });
+
             const body = {
                 systemInstruction: { parts: [{ text: systemInstruction }] },
-                contents: [{ role: 'user', parts: [{ text: `CURRENT_LIBRARY = ${buildLibraryContextForAI()}\n\nUser message: ${userText}` }] }],
+                contents: history.length ? history : [{ role: 'user', parts: [{ text: `CURRENT_LIBRARY = ${buildLibraryContextForAI()}\n\nUser message: ${userText}` }] }],
                 generationConfig: { responseMimeType: 'application/json', temperature: 0.4 }
             };
 
@@ -3152,6 +3169,16 @@ Rules:
             document.getElementById('detStatus').innerText = "• " + t(currentItem.status);
             document.getElementById('detCover').src = currentItem.cover || '';
             document.getElementById('detCover').style.display = currentItem.cover ? 'block' : 'none';
+            const detCoverEl = document.getElementById('detCover');
+            if (currentItem.category === 'game') {
+                detCoverEl.style.aspectRatio = '16/9';
+                detCoverEl.style.width = '100%';
+                detCoverEl.style.maxWidth = '320px';
+            } else {
+                detCoverEl.style.aspectRatio = '2/3';
+                detCoverEl.style.width = '200px';
+                detCoverEl.style.maxWidth = '';
+            }
             document.getElementById('detScore').innerText = currentItem.rating ? `${parseFloat(currentItem.rating).toFixed(1)}/10 ★` : '';
             const isWatchable = ['anime', 'animemovie', 'movie', 'series'].includes(currentItem.category);
             document.getElementById('detImdbBadge').classList.toggle('hidden', !currentItem.rating || !isWatchable);
